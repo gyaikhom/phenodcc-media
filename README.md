@@ -73,7 +73,7 @@ The archive should be structured so that we can infer the original experiment co
 
 Now, since we create a record in `phenodcc_media.media_file` for each media file that the module should track, it uses the _primary key_ of this record to name the media file that is downloaded and saved. We could also use the _measurement identifier_ (`mid`) associated with the media file URI.
 
-We could have saved the media files using the file name in the URI, however, since there is no standardisation across centres on how the files should be named, it hinders automation. Again, since the original file names are of little concern to us (given that we can refer back to the context from the `<cid, lid, gid, sid, pid, qid>` tuple, using the primary key makes maintenance much easier.
+We could have saved the media files using the file name in the URI, however, since there is no standardisation across centres on how the files should be named, it hinders automation. Again, since the original file names are of little concern to us, given that we can refer back to the context from the `<cid, lid, gid, sid, pid, qid>` tuple, using the primary key makes maintenance much easier.
 
 ## Optimising storage
 
