@@ -126,7 +126,12 @@ def download_file(url, dest):
 
 def get_ftp_file(url, dest, cred):
     loc = "ftp://" + cred["username"] + ":" + cred["accesskey"] + "@" + url.netloc + url.path
-    return download_file(loc, dest)
+    return_value = download_file(loc, dest)
+
+    if (!return_value):
+        loc = "ftp://" + url.netloc + url.path
+        return_value = download_file(loc, dest)
+    return return_value
 
 
 def get_sftp_file(url, dest, cred):
