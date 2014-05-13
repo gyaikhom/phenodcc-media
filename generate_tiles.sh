@@ -192,7 +192,7 @@ do
     # Furthermore, this could slow down the filesystem. We therefore
     # break down the checksum into buckets, where each bucket is
     # four characters long, so that the bucket hierarchy depth is ten.
-    # Hence, at each level, we can have 1,679,616 items.
+    # Hence, at each level, we can have 65536 (16^4) items.
     #
     # E.g., we get the directory from
 
