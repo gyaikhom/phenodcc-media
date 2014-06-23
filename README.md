@@ -19,13 +19,13 @@ The viewer has three main components:
     we pre-process them to JPEG formats. This allows us to also
     compress the files for efficient dissemination. Furthermore, since
     the images are likely to be high-resolution biological images, we
-    decompose the images into image tiles. See `processing/design`
-    directory for further details.
+    decompose the images into image tiles. See `processing/README.md`
+    for further details.
 
 * **Image Viewer** This is a web application that provides the
     interface for viewing the image tiles, and to control them. It
     consist of relevant web services for retrieving image meta-data
-    and an embeddable Javascript client. See `viewer/design` for
+    and an embeddable Javascript client. See `viewer/README.md` for
     further details.
 
 * **Image database** This is the database that links the image tiles
