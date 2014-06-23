@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+  <persistence-unit name="org.mousephenotype.dcc.media.entities.pu" transaction-type="RESOURCE_LOCAL">
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+    <!-- we need entities in the IMPReSS entities packages -->
+    <class>org.mousephenotype.dcc.entities.impress.ParamIncrement</class>
+    <class>org.mousephenotype.dcc.entities.impress.ParamMpterm</class>
+    <class>org.mousephenotype.dcc.entities.impress.ParamOption</class>
+    <class>org.mousephenotype.dcc.entities.impress.Parameter</class>
+    <class>org.mousephenotype.dcc.entities.impress.ParameterHasOptions</class>
+    <class>org.mousephenotype.dcc.entities.impress.Pipeline</class>
+    <class>org.mousephenotype.dcc.entities.impress.PipelineHasProcedures</class>
+    <class>org.mousephenotype.dcc.entities.impress.Procedure</class>
+    <class>org.mousephenotype.dcc.entities.impress.ProcedureHasParameters</class>
+    <class>org.mousephenotype.dcc.entities.impress.ProcedureType</class>
+    <class>org.mousephenotype.dcc.entities.impress.ProcedureWeek</class>
+    <class>org.mousephenotype.dcc.entities.impress.Units</class>
+    <!-- we need entities in the Import Library Overview entities packages -->
+    <class>org.mousephenotype.dcc.entities.overviews.Genotype</class>
+    <class>org.mousephenotype.dcc.entities.overviews.ACentre</class>
+    <class>org.mousephenotype.dcc.entities.overviews.Strain</class>
+    <class>org.mousephenotype.dcc.entities.overviews.AnimalOverview</class>
+    <class>org.mousephenotype.dcc.entities.overviews.MeasurementsPerformed</class>
+    <class>org.mousephenotype.dcc.entities.overviews.ProceduresPerformed</class>
+    <class>org.mousephenotype.dcc.entities.overviews.ProcedureAnimalOverview</class>
+    <!-- project entities -->
+    <class>org.mousephenotype.dcc.media.entities.MediaFile</class>
+    <class>org.mousephenotype.dcc.media.entities.Phase</class>
+    <class>org.mousephenotype.dcc.media.entities.AStatus</class>
+    <class>org.mousephenotype.dcc.media.entities.FileExtension</class>
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="${db.url}"/>
+      <property name="javax.persistence.jdbc.driver" value="${db.driver}"/>
+      <property name="javax.persistence.jdbc.user" value="${db.user}"/>
+      <property name="javax.persistence.jdbc.password" value="${db.password}"/>
+    </properties>
+  </persistence-unit>
+</persistence>

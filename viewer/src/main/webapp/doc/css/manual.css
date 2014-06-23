@@ -1,0 +1,139 @@
+body {
+    font-family: arial;
+    font-size: 14px;
+    margin: 10px;
+    margin-left: 80px;
+    width: 800px;
+    color: #444;
+    line-height: 160%;
+}
+
+#header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+
+#TOC {
+    border: 1px solid #ddd;
+    background-color: #f5f5f5;
+}
+
+code {
+    color: darkgreen;
+}
+
+h1 {
+    font-size: 19px;
+    margin-top: 40px;
+}
+
+h2 {
+    font-size: 17px;
+    margin-top: 30px;
+}
+
+h3 {
+    font-size: 15px;
+    font-style: oblique;
+    margin-top: 20px;
+}
+
+a {
+    color: #06f;
+    text-decoration: none;
+    border-bottom: 1px dotted #aaa;
+}
+
+a:hover {
+    color: orangered;
+    border-bottom: 1px solid #888;
+}
+
+.figure {
+    text-align: center;
+    font-weight: bold;
+    color: #777;
+    margin-bottom: 40px;
+}
+
+pre {
+    padding: 15px;
+    background-color: #efefef;
+}
+
+.panel {
+    border: 1px dotted #aaa;
+    border-top: 3px solid #ccc;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    background-color: #fafafa;
+}
+
+.tab {
+    border: 1px solid #ffaa33;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    -moz-border-radius: 2px;
+    border-radius: 4px;
+    background-color: #ffffaa;
+}
+
+.control {
+    border: 1px solid #ffaa33;
+    padding:2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    -moz-border-radius: 2px;
+    border-radius: 4px;
+    background-color: #ffffaa;
+}
+
+.button {
+    border: 1px solid #aaccff;
+    padding:2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    -moz-border-radius: 2px;
+    border-radius: 4px;
+    background-color: #cceeff;
+}
+
+.footer {
+    height: 40px;
+    padding-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+}
+
+.version {
+    background: #fea;
+    padding: 10px;
+    margin-top: 40px;
+    border: 1px solid #fc0;
+}
+
+.img-wrap {
+    float: right;
+    margin-left: 40px;
+}
+
+
+.img-center {
+    text-align: center;
+}
+
+
+.gender-zygosity {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.gender-zygosity td {
+    padding: 20px;
+    padding-left: 5px;
+    padding-right: 5px;
+}

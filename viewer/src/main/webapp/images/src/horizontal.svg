@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="538"
+   height="600"
+   viewBox="0 0 538 600"
+   id="svg3043"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="vertical.svg"
+   inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-visualise/src/main/webapp/images/stateful/twocol.png"
+   inkscape:export-xdpi="4.5"
+   inkscape:export-ydpi="4.5">
+  <metadata
+     id="metadata3061">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Man and woman (heterosexual) icon</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3059">
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible">
+      <path
+         id="path4025"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1600"
+     inkscape:window-height="1151"
+     id="namedview3057"
+     showgrid="false"
+     inkscape:zoom="1.05"
+     inkscape:cx="113.22844"
+     inkscape:cy="300"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3043" />
+  <title
+     id="title3045">Man and woman (heterosexual) icon</title>
+  <rect
+     style="fill:none;stroke:#000000;stroke-width:33.15750504;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     id="rect3953"
+     width="469.69965"
+     height="656.36652"
+     x="64.494003"
+     y="-631.47577"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/vertical_on.png"
+     inkscape:export-xdpi="4.1399999"
+     inkscape:export-ydpi="4.1399999"
+     transform="matrix(0,1,-1,0,0,0)" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:33.15750504;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="M 619.79335,299.49586 -17.017712,299.19179"
+     id="path3973"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc"
+     inkscape:export-xdpi="4.1399999"
+     inkscape:export-ydpi="4.1399999"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/vertical_on.png" />
+</svg>

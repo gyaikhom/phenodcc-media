@@ -1,0 +1,552 @@
+/* This style was developed by (http://www.mousephenotype.org/)
+ * Copyright (c) 2014, Medical Research Council Harwell (Apache 2.0 license)
+ * Author: Dr. Gagarine Yaikhom (g.yaikhom@har.mrc.ac.uk)
+ */
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track-piece  {
+    background-color: rgba(255,255,255,0.15);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255,255,255,0.75);
+}
+
+html,
+body {
+    padding: 0px;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    font-family: "Source Sans pro", "Arial", sans-serif;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+}
+div {
+    box-sizing:border-box;
+    -moz-box-sizing:border-box; /* Firefox */
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.grab {
+    cursor: url("https://mail.google.com/mail/images/2/openhand.cur") 8 8, move;
+}
+
+.grabbing {
+    cursor: url("https://mail.google.com/mail/images/2/closedhand.cur") 8 8, move;
+}
+
+[class*="specimen-selector-"] {
+    background: #252525;
+    overflow: auto;
+}
+
+[class*="viewport-container-"] {
+    background: black;
+}
+
+.specimen-selector-left,
+.specimen-selector-right {
+    position: absolute;
+}
+
+.specimen-selector-left {
+    float: left;
+}
+
+.specimen-selector-right {
+    float: right;
+}
+
+.specimen-selector-top,
+.specimen-selector-bottom {
+    position: relative;
+}
+
+.specimen-selector-top {
+    clear: right;
+}
+
+.specimen-selector-bottom {
+    clear: left;
+    bottom: 0px;
+}
+
+.viewport-container-left,
+.viewport-container-right {
+    position: relative;
+    height: 100%;
+}
+
+.viewport-container-left {
+    float: left;
+}
+
+.viewport-container-right {
+    float: right;
+}
+
+.viewport-container-top,
+.viewport-container-bottom {
+    position: relative;
+    width: 100%;
+}
+
+.viewport {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.layer {
+    position: absolute;
+    overflow: hidden;
+}
+
+.view-control {
+    display: inline-block;
+    position: absolute;
+    background: rgba(0,0,0,.65);
+    font-size: 14px;
+    padding: 10px;
+    top: 0px;
+    left: 0px;
+    border: 1px solid #666;
+}
+
+.dcc-slider {
+    position: relative;
+    float: left;
+    clear: both;
+}
+
+.dcc-slider-label,
+.dcc-slider-value {
+    position: relative;
+    float: left;
+    text-align: right;
+}
+
+.dcc-slider-label {
+    height: 20px;
+    width: 70px;
+    color: #bbb;
+}
+
+.dcc-slider-value {
+    display: none;
+    font-size: 13x;
+    height: 18px;
+    width: 40px;
+    padding: 3px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    margin-top: 2px;
+    margin-left: 5px;
+    margin-right: 2px;
+    border: 1px solid #000;
+    background: #aaa;
+    box-shadow: 1px 1px 2px 0px #555 inset;
+}
+
+.dcc-slider-range {
+    position: relative;
+    float: left;
+    display: inline-block;
+}
+
+.dcc-slider-bar {
+    position: absolute;
+    background: #f80;
+    height: 2px;
+    border-radius: 1px;
+    -moz-border-radius: 5px;
+    box-shadow: 1px 1px 1px 0px rgba(0, 0, 0, 0.5);
+}
+
+.dcc-slider-button {
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    cursor: move;
+    border: 1px solid #55;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 1px 4px 4px 0px rgba(0, 0, 0, .2);
+}
+
+.dcc-slider-reset {
+    position: relative;
+    background-image: url("../images/reset.png");
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 30px;
+    width: 30px;
+    float: left;
+    cursor: pointer;
+}
+
+.dcc-slider-min,
+.dcc-slider-max {
+    position: absolute;
+    height: 20px;
+    width: 30px;
+    color: #bbb;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.dcc-slider-max {
+    text-align: left;
+    padding-left: 10px;
+}
+
+.checkbox-container {
+
+}
+
+.image-processing-checkbox-label,
+.image-processing-checkbox {
+    float: left;
+    margin-top: 10px;
+}
+
+.image-processing-checkbox-label {
+    color: #aaa;
+    margin-top: 6px;
+    padding-left: 5px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.thumbnail {
+    cursor: pointer;
+    padding: 5px;
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #111;
+    font-size: 12px;
+    width: 250px;
+    float: left;
+}
+
+.animal-media {
+    padding: 5px;
+    float: left;
+    direction: ltr;
+}
+
+.animal-media table {
+    line-height: 90%;
+    color: #aaa;
+}
+
+.animal-media table td {
+    width: auto;
+    padding: 2px;
+}
+
+.active .animal-media table {
+    color: #ff0;
+}
+
+.animal-media table tr td:first-child {
+    font-weight: bold;
+    color: #777;
+    text-align: right;
+}
+
+.active .animal-media table tr td:first-child {
+    color: #bbb;
+}
+
+[class*="thumbnail-"] {
+    position: relative;
+    overflow: hidden;
+    width: 240px;
+    margin-top: 4px;
+}
+
+.thumbnail-img {
+    opacity: 0.5;
+}
+
+.thumbnail-img img {
+    display: block;
+    width: 100%;
+}
+
+.thumbnail-img > .roi-selector {
+    position: absolute;
+    background: rgba(255,50,10,0.3);
+    top: 0;
+    left: 0px;
+    display: none;
+    border: 1px solid rgba(255,50,10,0.35);
+}
+
+.active {
+    background-color: #000;
+}
+
+.active .thumbnail-img {
+    opacity: 1;
+}
+
+.active .thumbnail-img > .roi-selector {
+    display: block;
+}
+
+.thumbnail-pdf {
+    background-repeat: no-repeat;
+    background-position: 5px center;
+    background-image: url("../images/pdf.png");
+    height: 28px;
+    width: 100%;
+    color: #cc0;
+    padding-top: 6px;
+    padding-left: 25px;
+}
+
+.thumbnail-pdf:hover {
+    background-color: #000;
+}
+
+.thumbnail-pdf:hover::after {
+    content: 'click to download file';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 13px;
+    color: #ddd;
+    text-shadow: 0px 1px #000;
+}
+
+.thumbnail.no-media-data * {
+    color: #b33;
+    cursor: default;
+}
+
+.image-panel-single {
+    width: 100%;
+    height: 100%;
+}
+
+.image-panel-title {
+    position: absolute;
+    top: 0px;
+    right: 25px;
+    height: 25px;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 0px;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: bold;
+    color: #eee;
+    background: rgba(0,0,0,.5);    
+}
+
+.image-panel-download {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    height: 23px;
+    width: 25px;
+    border: 1px solid rgba(0,0,0,.5);
+    background: #fff; 
+    background-image: url('../images/download.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.5;
+}
+.image-panel-download:hover {
+    cursor: pointer;
+    opacity: 1;
+}
+
+
+.image-panel-left,
+.image-panel-right {
+    width: 50%;
+    height: 100%;
+    border-right: 1px solid #555;
+}
+.image-panel-left {
+    float: left;
+    background: blue;
+}
+.image-panel-right {
+    float: right;
+    background: red;
+}
+
+.image-panel-top,
+.image-panel-bottom {
+    width: 100%;
+    height: 50%;
+    float: left;
+    border-bottom: 1px solid #555;
+}
+.image-panel-top {
+    clear: right;
+    background: blue;
+}
+.image-panel-bottom {
+    background: red;
+}
+
+.image-viewer-toolbar {
+    background: #555;
+    height: 40px;
+    width: 100%;
+    padding: 0px;
+    box-shadow: inset 0px 0px 15px 0px rgba(0,0,0,.25);
+}
+
+.exit-image-viewer {
+    float: left;
+    width: 94px;
+    height: 28px;
+    margin-top: 7px;
+    margin-left: 7px;
+    margin-right: 20px;
+    padding: 2px;
+    color: #fff;
+    background: #f70;
+    font-weight: bold;
+    text-shadow: 0 0px 1px rgba(0,0,0,.75);
+    text-align: center;
+    cursor: pointer;
+}
+
+.exit-image-viewer:hover {
+    background: #f50;
+}
+
+.image-viewer-title {
+    float: left;
+    display: inline-block;
+    font-weight: bold;
+    padding: 8px;
+    color: #fff;
+    font-size: 13px;
+}
+
+.mode-switcher,
+.specimen-selector,
+.viewer-controls,
+.switch-split-type {
+    float: right;
+    width: 60px;
+    height: 40px;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+.mode-switcher:hover,
+.specimen-selector:hover,
+.viewer-controls:hover,
+.switch-split-type:hover {
+    box-shadow: inset 0px 0px 40px 0px rgba(0,0,0,.5);
+}
+
+.specimen-selector {
+    background-image: url('../images/specimen_off.png');
+}
+
+.viewer-controls {
+    background-image: url('../images/controls_off.png');
+}
+
+.specimen-selector.image-viewer-control-on {
+    background-image: url('../images/specimen_on.png');
+}
+
+.viewer-controls.image-viewer-control-on {
+    background-image: url('../images/controls_on.png');
+}
+
+.switch-split-type.vertical {
+    background-image: url('../images/vertical_off.png');
+}
+
+.switch-split-type.horizontal {
+    background-image: url('../images/horizontal_off.png');
+}
+
+.mode-switcher {
+    background-image: url('../images/compare_off.png');
+}
+
+.mode-switcher.single {
+    background-image: url('../images/single_off.png');
+}
+
+.error-message {
+    position: relative;
+    font-size: 14px;
+    color: #666;
+    background-image: url('../images/error.png');
+    background-repeat: no-repeat;
+    padding-left: 40px;
+    height: 180px;
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: -90px;
+    top: 50%;
+}
+
+.error-message div:first-child {
+    font-size: 18px;
+    font-weight: bold;
+    color: #f60;
+    margin-bottom: 10px;
+}
+
+.imageviewer-loading {
+    background-image: url('../images/loading.gif');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.imageviewer-no-images {
+    position: relative;
+    font-size: 14px;
+    color: #666;
+    background-image: url('../images/error.png');
+    background-repeat: no-repeat;
+    background-position: 10px 10px;
+}
+
+.imageviewer-no-images::after {
+    content: "No specimens with images";
+    color: #777;
+    position: absolute;
+    top: 15px;;
+    left: 45px;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0px -1px 0px #000;
+}
