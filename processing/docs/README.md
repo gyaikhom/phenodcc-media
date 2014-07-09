@@ -4,40 +4,6 @@ This describes the implementation of the software module which automates downloa
 
 The data coordination centre uses an automated system, referred to as the **[crawler](https://github.com/mpi2/phenodcc-crawler)**, for data collection and collation. It crawls all of the participating research institutes periodically, and downloads all of the data that have been added since the last crawling session. In addition to alpha-numeric data, the centres also export media data (e.g., X-ray images, 3D embryo models etc.), which the crawler should handle. The media file downloader implements this facility.
 
-## Usage
-
-To run the script, you will require sufficient storage space allocated for the original media files and processed files (e.g., thumbnails and image tiles). This storage should be read and write accessible to the scripts.
-
-Let us assume that the allocate directory where we wish to download and store our files is `/media/`. We must do the following to run the scripts.
-
-1. Create an archival directory for storing the original media files:
-
-        $ cd /media
-        $ mkdir src
-    
-2. Create directory for storing processed files:
-
-        $ mkdir tiles
-
-3. Create the `phenodcc_media` database by running the `phenodcc_media.sql` script. Check the top of the file for adding users and credentials etc.
-
-4. Modify the `phenodcc_media.config` properties file to set the database access credentials and the target directories created in steps 1 and 2.
-
-5. Alter the Python script `downloader.py` to match your setup for retrieving the URIs which we wish to download and process.
-
-6. Run `downloader.py`.
-
-
-After a successful run, the contents of the directories will be as follows:
-
-* `src`
-    This contains all of the original media files.
-
-* `tiles`
-    This contains all of the image tiles and thumbnails generated from the original image files.
-
-The script can be **run incrementally**. During each run, only files that have not been downloaded in the previous run will be downloaded. In addition to these new URIs, the script will also attempt to download media that could not be downloaded in previous runs. Furthermore, existing files and directories are left untouched.
-
 ## Implementation requirements
 
 Research centres exporting media data hosts their media files at their respective servers (e.g., FTP server). The URI (uniform resource identifier) of these media files are supplied to the crawler as string values of experimental results. This is what the downloader module uses as the source for retrieving the media files.
@@ -51,9 +17,9 @@ The following are the key design challenges:
 
 ## Source code structure
 
-The [Python](https://www.python.org/) script `downloader.py` carries out the downloading and processing. This script should be executed periodically by the **crawler**.
+The [Python](https://www.python.org/) script `phenodcc_media.py` carries out the downloading and processing. This script should be executed periodically by the **crawler**.
 
-Not all media files need processing (e.g., PDF files). However, for most of the media files that are images, the download module should optimise the image files for efficient delivery. This processing is done by the `generate_tiles.sh` [Bash](https://www.gnu.org/software/bash/) script.
+Not all media files need processing (e.g., PDF files). However, for most of the media files that are images, the download module should optimise the image files for efficient delivery. This processing is done by the `generate_tiles_for_image.sh` [Bash](https://www.gnu.org/software/bash/) script.
 
 Since the URIs are provided to the module as string values of experimental results, the module requires access to the database where these values are stored. The access credential to this database is specified in the `phenodcc_media.config` properties file.
 
@@ -106,12 +72,12 @@ Based on these requirements, we have the following:
 
 2. Break the original image to smaller image tiles. This allows downloading only parts of the image that are visible to the client.
 
-We use [ImageMagick](http://www.imagemagick.org/) to do the conversion and tiling. For each image file downloaded, the `generate_tiles.sh` script goes to the checksum directory and converts the original media file to a JPEG image named `original.jpg`. Then, for each of the requested scales, `original.jpg` file is broken down into tiles.
+We use [ImageMagick](http://www.imagemagick.org/) to do the conversion and tiling. For each image file downloaded, the `generate_tiles_for_image.sh` script goes to the checksum directory and converts the original media file to a JPEG image named `original.jpg`. Then, for each of the requested scales, `original.jpg` file is broken down into tiles.
 
 In the `phenodcc_media.config`, we can specify the size of the tile (in pixels) and also the set of scaling that we require. For instance,
 
     [tiling]
-    tile_sizes = 128,256
+    tile_size = 256
     image_scales = 10,25,50,75,100
 
 Further to the tiles, the script also generates a thumbnail file, which can be used inside image navigators.
