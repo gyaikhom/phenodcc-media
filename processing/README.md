@@ -1,117 +1,77 @@
-# Media file download and processing
+# Media downloader and image processor
 
-This describes the implementation of the software module which automates downloading and processing of media files. It is expected to be run periodically as part of a data collection service at the [IMPC](http://mousephenotype.org) data coordination centre.
+The `phenodcc_media.py` script allows a user to prepare, download and process media files.
+If the media files are images, the required tiles are generated for efficient dissemination.
 
-The data coordination centre uses an automated system, referred to as the **[crawler](https://github.com/mpi2/phenodcc-crawler)**, for data collection and collation. It crawls all of the participating research institutes periodically, and downloads all of the data that have been added since the last crawling session. In addition to alpha-numeric data, the centres also export media data (e.g., X-ray images, 3D embryo models etc.), which the crawler should handle. The media file downloader implements this facility.
 
 ## Usage
 
-To run the script, you will require sufficient storage space allocated for the original media files and processed files (e.g., thumbnails and image tiles). This storage should be read and write accessible to the scripts.
+To run the script, you must use one of the command-line switches, as shown below:
 
-Let us assume that the allocate directory where we wish to download and store our files is `/media/`. We must do the following to run the scripts.
+    $ ./phenodcc_media.py -h
 
-1. Create an archival directory for storing the original media files:
-
-        $ cd /media
-        $ mkdir src
+    PhenoDCC media downloader and tile generator
+    (http://www.mousephenotype.org)
+    Version 1.0.0 
     
-2. Create directory for storing processed files:
+    USAGE: phenodcc_media.py [-p | --prepare | -d | --download | -t | --tile | -v | --verbose | -h | --help]
+    
+        -p, --prepare    Prepare media files by marking them for download.
+        -d, --download   Download media files that was marked for download.
+        -t, --tile       Generate tiles for all of the image media files
+                         that was downloaded successfully.
+        -v, --verbose    Verbose output of execution status.
+        -h, --help       Displays this help information.
+    
+    The configuration file for running this script is set in 'phenodcc_media.config'.
+    The following settings are allowed:
+    
+        tracker - Database for getting active contexts and media file URLs.
+          media - Database where we track the download and processing of media files.
+           tile - Set tile size.
+         scales - Set zooming scales.
 
-        $ mkdir tiles
-
-3. Create the `phenodcc_media` database by running the `phenodcc_media.sql` script. Check the top of the file for adding users and credentials etc.
-
-4. Modify the `phenodcc_media.config` properties file to set the database access credentials and the target directories created in steps 1 and 2.
-
-5. Alter the Python script `downloader.py` to match your setup for retrieving the URIs which we wish to download and process.
-
-6. Run `downloader.py`.
+Single Instance
+---------------
+To allow the script to be invoked periodically as part of an automated system,
+the script uses file locking to allow only one running instance of a phase.
+Hence, a file name prepare.lock, download.lock or tiling.lock is created in the
+directory from which the script is invoked. Note that this only works if the script
+is always run from the same directory. Two different phases can run simultaneously.
 
 
-After a successful run, the contents of the directories will be as follows:
+## Files and their meaning
 
-* `src`
-    This contains all of the original media files.
+* `download.lock` - Lock file that prevents multiple instances of the **download** phase. If a script was executed
+    previously in the _download mode_, and if it is still running, no new _download_ phase can be instantiated.
 
-* `tiles`
-    This contains all of the image tiles and thumbnails generated from the original image files.
+* `fix_tile_metadata.py` - Ad hoc script that was used to fix image-file meta-data when the tiling was run
+    independently of the database. This fixes the checksum and image dimensions for each of the image media records
+    in the database. Note that tiling of an entire _source_ directory tree can be achieve independently of the
+    database by running the `generate_tiles_using_source_directory.sh` script.
 
-The script can be **run incrementally**. During each run, only files that have not been downloaded in the previous run will be downloaded. In addition to these new URIs, the script will also attempt to download media that could not be downloaded in previous runs. Furthermore, existing files and directories are left untouched.
+* `generate_tiles_for_image.sh` - This script generates the required tiles for a given image media. It is used by
+    the *tiling phase* to generate tiles for a given tiling configuration.
 
-## Implementation requirements
+* `generate_tiles_using_source_directory.sh` - This script generate all of the required tiles for a collection of
+    image media. This is run independently of the `phenodcc_media.py` script. Use this script only when tiles
+    must be generated without modifying the `phenodcc_media` database. Remember to run `fix_tile_metadata.py`
+    if you wish to sync the tiles with the database.
 
-Research centres exporting media data hosts their media files at their respective servers (e.g., FTP server). The URI (uniform resource identifier) of these media files are supplied to the crawler as string values of experimental results. This is what the downloader module uses as the source for retrieving the media files.
+* `phenodcc_media.config` - This is the configuration file that is used by `phenodcc_media.py` to run each of
+    the phases. You set there the `phenodcc_tracker` database, `phenodcc_media` database, tile size,
+    zoom levels required for tiling etc.
 
-The following are the key design challenges:
+* `phenodcc_media.py` - This is the main script. It can be run in one of the three phases: **prepare**, **download**
+   or **tiling**. The behavour of the script depends not only on the command line switches, but also on the
+   values set in `phenodcc_media.config`.
 
-1. The module should integrate seamlessly with the **crawler**.
-2. The original media should be processed to make dissemination efficient.
-3. The processing should also reduce storage requirements.
-4. All of the media files retrieved from the various host servers should be archived for future access.
+* `phenodcc_media.sql` - This is the script for creating the `phenodcc_media` database. The linking between media files,
+    tiles and the image display web application relies completely on this database.
 
-## Source code structure
+* `prepare.lock` - Lock file that prevents multiple instances of the **prepare** phase. If a script was executed
+    previously in the _prepare mode_, and if it is still running, no new _prepare_ phase can be instantiated.
 
-The [Python](https://www.python.org/) script `downloader.py` carries out the downloading and processing. This script should be executed periodically by the **crawler**.
+* `tiling.lock` - Lock file that prevents multiple instances of the **tiling** phase. If a script was executed
+    previously in the _tiling mode_, and if it is still running, no new _tiling_ phase can be instantiated.
 
-Not all media files need processing (e.g., PDF files). However, for most of the media files that are images, the download module should optimise the image files for efficient delivery. This processing is done by the `generate_tiles.sh` [Bash](https://www.gnu.org/software/bash/) script.
-
-Since the URIs are provided to the module as string values of experimental results, the module requires access to the database where these values are stored. The access credential to this database is specified in the `phenodcc_media.config` properties file.
-
-To archive the media files downloaded and to generate processed files for efficient dissemination, we need storage. As discussed in the _Usage_ section, we need two directories for storing files. These are also specified in `phenodcc_media.config`.
-
-Finally, to keep track of the state of media files that the module has already processed, and those that need processing, the module maintains a database. The schema for this database is specified in the [MySQL](http://www.mysql.com/) script `phenodcc_media.sql`.
-
-## Storage architecture
-
-We expect the system to store a large number of media files. This presents the following challenges:
-
-### Structured archive
-
-The archive should be structured so that we can infer the original experiment context from the directory structure. At the IMPC, a unique set of media files are generated for each of the specimens that are subjects of an experiment context. This context is uniquely identified by the _centre_ (`cid`), _experiment pipeline_ (`lid`), _genotype_ (`gid`), _strain_ (`sid`), _experimental procedure_ (`pid`) and the _measured parameter_ (`qid`). Hence, we choose the following directory structure for storing the original media files inside the archive directory `src`:
-
-    src/{cid}/{lid}/{gid}/{sid}/{pid}/{qid}
-
-Now, since we create a record in `phenodcc_media.media_file` for each media file that the module should track, it uses the _primary key_ of this record to name the media file that is downloaded and saved. We could also use the _measurement identifier_ (`mid`) associated with the media file URI.
-
-We could have saved the media files using the file name in the URI, however, since there is no standardisation across centres on how the files should be named, it hinders automation. Again, since the original file names are of little concern to us, given that we can refer back to the context from the `<cid, lid, gid, sid, pid, qid>` tuple, using the primary key makes maintenance much easier.
-
-## Optimising storage
-
-We do not wish to store the same data multiple times. While we have to keep the original files for archival purposes, the processed files should not be replicated. This means:
-
-1. Only store processed files that are unique.
-2. Prevent the module from processing files that have already been processed, if the data is not unique.
-
-To achieve this, all of the media files that are to be processed are first filtered out by their _content_ checksum. Once a file has been downloaded and saved in the archive directory `src`, we calculate its [SHA1](http://en.wikipedia.org/wiki/SHA-1) checksum.
-
-* If the checksum is new, we create a new checksum directory inside `tiles` directory and generate all of the images tiles and thumbnails inside this directory. The checksum is then recorded in the `phenodcc_media.media_file` table.
- 
-* If the checksum already exists in `phenodcc_media.media_file` table, we do not process the media file again since we can reuse the existing processed files (e.g., tiles, thumbnails etc.). Hence, we simply update the corresponding record in `phenodcc_media.media_file` to point to this directory.
-
-### Directory structure
-
-Now, depending on the file system, the number of items allowed inside a directory varies. Furthermore, listing a flat directory structure of checksum directory names will be extremely slow, considering that there will be a large amount of image data. To alleviate this issue, we break the checksum into a directory hierarchy. For instance, instead of saving the process files inside a directory named, say `004303cc748c45f718b71ffeb71505a87e0b4bf0`, we break it down into a path `0043/03cc/748c/45f7/18b7/1ffe/b715/05a8/7e0b/4bf0`. Since SHA1 checksums are 40 characters long, we can have a hierarchy that is 10 paths depth. This tree spreads out the flat directory, which is much more efficient and works around the file system limitations.
-
-### Generating the tiles
-
-All of the image files should be delivered efficiently. This means that the files should not be too big to download, and that the server should spend as little as possible on delivering the files. Based on this, we take advantage of the following:
-
-1. Choose appropriate image compression for size optimisation.
-2. Choose an image container that is readily supported by most browsers.
-3. Only download parts of the image that are visible to the client.
-
-Based on these requirements, we have the following:
-
-1. Convert all image media data to JPEG. This means converting DICOM, TIFF, BMP etc. to JPEG.
-
-2. Break the original image to smaller image tiles. This allows downloading only parts of the image that are visible to the client.
-
-We use [ImageMagick](http://www.imagemagick.org/) to do the conversion and tiling. For each image file downloaded, the `generate_tiles.sh` script goes to the checksum directory and converts the original media file to a JPEG image named `original.jpg`. Then, for each of the requested scales, `original.jpg` file is broken down into tiles.
-
-In the `phenodcc_media.config`, we can specify the size of the tile (in pixels) and also the set of scaling that we require. For instance,
-
-    [tiling]
-    tile_sizes = 128,256
-    image_scales = 10,25,50,75,100
-
-Further to the tiles, the script also generates a thumbnail file, which can be used inside image navigators.
