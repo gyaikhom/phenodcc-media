@@ -46,10 +46,10 @@ The following provides a step-by-step guide to running the media downloader.
 3. You can run all three phases (prepare, download and tiling) simultaneously.
    If you wish to run them sequentially, here are the steps:
     
-     $ cd /home/user/phenodcc-media/src
-     $ ./phenodcc_media.py -p -v
-     $ ./phenodcc_media.py -d -v
-     $ ./phenodcc_media.py -t -v
+        $ cd /home/user/phenodcc-media/src
+        $ ./phenodcc_media.py -p -v
+        $ ./phenodcc_media.py -d -v
+        $ ./phenodcc_media.py -t -v
 
 
 ## Single Instance
