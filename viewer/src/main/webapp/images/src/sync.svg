@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="538"
+   height="600"
+   viewBox="0 0 538 600"
+   id="svg3043"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="sync.svg"
+   inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-visualise/src/main/webapp/images/stateful/twocol.png"
+   inkscape:export-xdpi="4.5"
+   inkscape:export-ydpi="4.5">
+  <metadata
+     id="metadata3061">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Man and woman (heterosexual) icon</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3059">
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible">
+      <path
+         id="path4025"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1600"
+     inkscape:window-height="1151"
+     id="namedview3057"
+     showgrid="false"
+     inkscape:zoom="0.37123106"
+     inkscape:cx="-636.16875"
+     inkscape:cy="810.58751"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3043" />
+  <title
+     id="title3045">Man and woman (heterosexual) icon</title>
+  <path
+     style="fill:none;stroke:#000000;stroke-width:49.658;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="m -117.70706,380.18316 0,-469.699647 656.36651,0"
+     id="rect3953-8"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.1162698"
+     inkscape:export-ydpi="3.1162698" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:49.658;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="m 631.47577,26.494003 0,469.699647 -656.366517,0"
+     id="rect3953"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.1162698"
+     inkscape:export-ydpi="3.1162698" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:49.65800095;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="M 729.58822,124.00788 631.34542,5.765085 533.7759,123.33459"
+     id="rect3953-8-4-9"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.1162698"
+     inkscape:export-ydpi="3.1162698" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:49.65800095;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="M -19.271538,299.46061 -117.51434,417.70341 -215.08386,300.1339"
+     id="rect3953-8-4-9-3"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccc"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.1162698"
+     inkscape:export-ydpi="3.1162698" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:48.34687424;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+     d="m -527.74428,-460.53248 c 146.14849,0 264.62525,-107.52424 264.62525,-240.16213 0,-132.63788 -118.47676,-240.16214 -264.62525,-240.16214"
+     id="path2998-8"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="csc" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:48.34687424;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+     d="m -678.56323,-941.0172 154.13119,0.64268"
+     id="path2998-0"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc" />
+  <path
+     style="fill:none;stroke:#000000;stroke-width:48.34687424;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+     d="m -678.56323,-461.17515 150.13119,0.64267"
+     id="path2998-0-3"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc" />
+  <g
+     transform="translate(513.74692,-576.46039)"
+     id="g3911-5"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.8420198"
+     inkscape:export-ydpi="3.8420198">
+    <g
+       id="g3892-9">
+      <path
+         style="fill:none;stroke:#000000;stroke-width:50.74950027;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+         d="m -414.99837,115.92791 c -146.14849,0 -264.62525,-118.4767618 -264.62525,-264.62526 0,-146.1485 118.47676,-264.62526 264.62525,-264.62526"
+         id="path2998-6"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:50.74950027;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+         d="m -263.75775,115.92791 c 146.14849,0 264.625247,-118.4767558 264.625247,-264.62526 0,-146.14849 -118.476757,-264.62526 -264.625247,-264.62526"
+         id="path2998-8-2"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:50.74950027;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+         d="m -414.5767,-413.49941 154.13119,0.70814"
+         id="path2998-0-9"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:50.74950027;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1"
+         d="m -414.5767,115.21977 150.13119,0.70814"
+         id="path2998-0-3-9"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cc" />
+    </g>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-width:49.65800095;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+     d="m -590.77557,-739.28327 656.366511,0"
+     id="rect3953-8-0"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="3.1162698"
+     inkscape:export-ydpi="3.1162698" />
+  <g
+     id="g3957"
+     inkscape:export-filename="/home/gyaikhom/work/yaikhom/projects/phenodcc-imaging-display/src/main/webapp/images/src/sync.png"
+     inkscape:export-xdpi="1.8920289"
+     inkscape:export-ydpi="1.8920289">
+    <g
+       style="stroke-width:75.00000013;stroke-miterlimit:1.60000002;stroke-dasharray:none"
+       transform="matrix(0.70710678,-0.70710678,0.70710678,0.70710678,336.98249,-761.08442)"
+       id="g3876">
+      <path
+         style="fill:none;stroke:#000000;stroke-width:75.00000013;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+         d="m -1721.4623,-858.79992 c -146.1485,0 -264.6253,-67.52424 -264.6253,-200.16208 0,-132.6379 118.4768,-200.1622 264.6253,-200.1622"
+         id="path2998"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:75.00000013;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+         d="m -1700.0694,-859.18175 c 146.1485,0 264.6253,-67.5243 264.6253,-200.16215 0,-132.6379 -118.4768,-200.1622 -264.6253,-200.1622"
+         id="path2998-1"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+    </g>
+    <path
+       sodipodi:nodetypes="cc"
+       inkscape:connector-curvature="0"
+       id="path2998-1-8"
+       d="m -1555.1882,-366.19858 388.4395,-389.60685"
+       style="fill:none;stroke:#000000;stroke-width:75;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none" />
+    <g
+       style="stroke-width:75.00000013;stroke-miterlimit:1.60000002;stroke-dasharray:none"
+       transform="matrix(0.70710678,-0.70710678,0.70710678,0.70710678,357.34958,-788.80059)"
+       id="g3889">
+      <path
+         style="fill:none;stroke:#000000;stroke-width:75.00000013;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+         d="m -1018.1553,-853.60334 c -146.1485,0 -264.6253,-67.52424 -264.6253,-200.16206 0,-132.6379 118.4768,-200.1622 264.6253,-200.1622"
+         id="path2998-7"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:75.00000013;stroke-linecap:round;stroke-miterlimit:1.60000002;stroke-opacity:1;stroke-dasharray:none"
+         d="m -996.76239,-853.98517 c 146.1485,0 264.62534,-67.5243 264.62534,-200.16213 0,-132.6379 -118.47684,-200.1622 -264.62534,-200.1622"
+         id="path2998-1-4"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="csc" />
+    </g>
+  </g>
+</svg>
