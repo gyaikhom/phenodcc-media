@@ -4,7 +4,13 @@
 
     <groupId>org.mousephenotype.dcc.imaging</groupId>
     <artifactId>phenodcc-imaging-display</artifactId>
-    <version>0.3</version>
+
+    <!-- If you change the version number, you should change the version
+    numbers in all of the web apps that embeds the image viewer (e.g.,
+    phenoview or the QC tool. These are specified in index.jsp of these
+    projects. Also, don't forget to release the web apps along with the
+    image viewer. -->
+    <version>0.5</version>
     <packaging>war</packaging>
     <name>phenodcc-imaging-display</name>
     <url>http://www.mousephenotype.org</url>
@@ -13,6 +19,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- The following contains usernames and passwords. Be careful when making
+    this source code available to the public. You should remove all of these
+    profiles before making the source code available to anyone outside MRC -->
     <profiles>
         <profile>
             <id>localhost</id>
@@ -25,16 +34,6 @@
                 <db.user>SET_DATABASE_USER</db.user>
                 <db.password>SET_DATABASE_PASSWORD</db.password>
                 <deploymenttarget>localhost</deploymenttarget>
-            </properties>
-        </profile>
-        <profile>
-            <id>live</id>
-            <properties>
-                <db.driver>com.mysql.jdbc.Driver</db.driver>
-                <db.url>jdbc:mysql://SET_DATABASE_HOSTNAME:3306/phenodcc_media</db.url>
-                <db.user>SET_DATABASE_USER</db.user>
-                <db.password>SET_DATABASE_PASSWORD</db.password>
-                <deploymenttarget>live</deploymenttarget>
             </properties>
         </profile>
     </profiles>
@@ -80,12 +79,12 @@
             <artifactId>javaee-web-api</artifactId>
             <version>7.0</version>
         </dependency>
-        
+
         <!-- The following jars are common to most of the web apps, so it makes
         sense to deploy them in Tomcat's common lib/ directory, and set
-        
+
             <scope>provided</scope>
-        
+
         for each dependency. During my investigation using VisualVM and MAT,
         I noticed that taking these jars outside of a web-app helps with
         memory leaks during hot deployment. However, until the team is ready,

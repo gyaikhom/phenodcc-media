@@ -1,8 +1,19 @@
 ************************************
 PHENODCC IMAGE VIEWER
 Release Notes
-Last updated - 23 June 2014
+Last updated - 29 July 2014
 ************************************
+
+Release 0.5
+ * Changed image server to prevent CORS error.
+
+Release 0.4
+ * Use cached values of media files list when switching between single to
+   comparative and vice versa.
+ * Proper handling of media files download and processing status.
+ * Added design documentation.
+ * Synchronised control between wildtype and mutant panels.
+ * Added facility to view PDF documents.
 
 Release 0.3
  * Prototype implementation with basic features.

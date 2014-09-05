@@ -28,12 +28,13 @@ import org.mousephenotype.dcc.media.persistence.PersistenceManager;
 /**
  *
  * @author Gagarine Yaikhom <g.yaikhom@har.mrc.ac.uk>
+ * @param <T>
  */
 public abstract class AbstractFacade<T> {
 
     @Context
     private ServletContext context;
-    private Class<T> entityClass;
+    private final Class<T> entityClass;
 
     public AbstractFacade(Class<T> entityClass) {
         this.entityClass = entityClass;

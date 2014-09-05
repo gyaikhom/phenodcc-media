@@ -24,6 +24,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * RESTful web services.
  *
  * @author Gagarine Yaikhom <g.yaikhom@har.mrc.ac.uk>
+ * @param <T>
  */
 @XmlRootElement
 public abstract class AbstractRestResponse<T> {

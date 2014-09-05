@@ -11,6 +11,10 @@
         <url-pattern>/rest/*</url-pattern>
     </servlet-mapping>
     <description>ServletContextListener</description>
+    <!-- Because Apache Tomcat is not a Java EE application container, we cannot
+    use automatic persistence injection inside the entities. We, therefore, must
+    create and maintain a persistence manager explicitly. The following class
+    does this management. -->
     <listener>
         <listener-class>org.mousephenotype.dcc.media.persistence.PersistenceListener</listener-class>
     </listener>

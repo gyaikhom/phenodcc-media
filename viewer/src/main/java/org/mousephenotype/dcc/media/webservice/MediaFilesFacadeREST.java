@@ -15,10 +15,13 @@
  */
 package org.mousephenotype.dcc.media.webservice;
 
+import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import org.mousephenotype.dcc.media.entities.MediaFileDetail;
 
@@ -38,7 +41,22 @@ public class MediaFilesFacadeREST extends AbstractFacade<MediaFileDetail> {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{cid}/{gid}/{sid}/{pid}/{qid}")
-    public MediaFileDetailsPack extjsFindBy(
+    @Asynchronous
+    public void extjsFindBy(
+            @Suspended
+            final AsyncResponse asyncResponse, @PathParam(value = "cid")
+            final Integer centreId, @PathParam(value = "gid")
+            final Integer genotypeId, @PathParam(value = "sid")
+            final Integer strainId, @PathParam(value = "pid")
+            final Integer procedureId, @PathParam(value = "qid")
+            final Integer parameterId, @QueryParam(value = "lid")
+            final Integer pipelineId, @QueryParam(value = "includeBaseline")
+            final Boolean includeBaseline) {
+        asyncResponse.resume(doExtjsFindBy(centreId, genotypeId, strainId,
+                procedureId, parameterId, pipelineId, includeBaseline));
+    }
+
+    private MediaFileDetailsPack doExtjsFindBy(
             @PathParam("cid") Integer centreId,
             @PathParam("gid") Integer genotypeId,
             @PathParam("sid") Integer strainId,

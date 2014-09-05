@@ -66,7 +66,7 @@ div {
 
 .specimen-selector-left,
 .specimen-selector-right {
-    position: absolute;
+    position: relative;
 }
 
 .specimen-selector-left {
@@ -155,7 +155,7 @@ div {
 
 .dcc-slider-value {
     display: none;
-    font-size: 13x;
+    font-size: 13px;
     height: 18px;
     width: 40px;
     padding: 3px;
@@ -189,7 +189,7 @@ div {
     height: 16px;
     width: 16px;
     cursor: move;
-    border: 1px solid #55;
+    border: 1px solid #555;
     border-radius: 16px;
     background: #fff;
     box-shadow: 1px 4px 4px 0px rgba(0, 0, 0, .2);
@@ -221,22 +221,20 @@ div {
     padding-left: 10px;
 }
 
-.checkbox-container {
-
-}
-
-.image-processing-checkbox-label,
 .image-processing-checkbox {
     float: left;
-    margin-top: 10px;
-}
-
-.image-processing-checkbox-label {
     color: #aaa;
     margin-top: 6px;
-    padding-left: 5px;
+    padding-left: 20px;
     margin-right: 15px;
     cursor: pointer;
+    background-image: url('../images/checkbox_off.png');
+    background-repeat: no-repeat;
+    background-position: 0px 1px;
+}
+
+.image-processing-checkbox.checked {
+    background-image: url('../images/checkbox_on.png');
 }
 
 .thumbnail {
@@ -246,6 +244,10 @@ div {
     border-bottom: 1px solid #111;
     font-size: 12px;
     width: 250px;
+    float: left;
+}
+
+.thumbnail a {
     float: left;
 }
 
@@ -322,23 +324,13 @@ div {
     background-image: url("../images/pdf.png");
     height: 28px;
     width: 100%;
-    color: #cc0;
+    color: #55aaff;
     padding-top: 6px;
     padding-left: 25px;
 }
 
 .thumbnail-pdf:hover {
-    background-color: #000;
-}
-
-.thumbnail-pdf:hover::after {
-    content: 'click to download file';
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    font-size: 13px;
-    color: #ddd;
-    text-shadow: 0px 1px #000;
+    color: #fff;
 }
 
 .thumbnail.no-media-data * {
@@ -425,14 +417,14 @@ div {
 
 .exit-image-viewer {
     float: left;
-    width: 94px;
-    height: 28px;
-    margin-top: 7px;
-    margin-left: 7px;
+    width: 110px;
+    height: 40px;
+    margin-top: 0px;
+    margin-left: 0px;
     margin-right: 20px;
-    padding: 2px;
+    padding: 8px;
     color: #fff;
-    background: #f70;
+    background: #09f;
     font-weight: bold;
     text-shadow: 0 0px 1px rgba(0,0,0,.75);
     text-align: center;
@@ -440,7 +432,7 @@ div {
 }
 
 .exit-image-viewer:hover {
-    background: #f50;
+    background: #08f;
 }
 
 .image-viewer-title {
@@ -455,7 +447,8 @@ div {
 .mode-switcher,
 .specimen-selector,
 .viewer-controls,
-.switch-split-type {
+.switch-split-type,
+.sync-comparative {
     float: right;
     width: 60px;
     height: 40px;
@@ -467,7 +460,8 @@ div {
 .mode-switcher:hover,
 .specimen-selector:hover,
 .viewer-controls:hover,
-.switch-split-type:hover {
+.switch-split-type:hover,
+.sync-comparative:hover {
     box-shadow: inset 0px 0px 40px 0px rgba(0,0,0,.5);
 }
 
@@ -479,12 +473,20 @@ div {
     background-image: url('../images/controls_off.png');
 }
 
+.sync-comparative {
+    background-image: url('../images/sync_off.png');
+}
+
 .specimen-selector.image-viewer-control-on {
     background-image: url('../images/specimen_on.png');
 }
 
 .viewer-controls.image-viewer-control-on {
     background-image: url('../images/controls_on.png');
+}
+
+.sync-comparative.image-viewer-control-on {
+    background-image: url('../images/sync_on.png');
 }
 
 .switch-split-type.vertical {
@@ -502,6 +504,7 @@ div {
 .mode-switcher.single {
     background-image: url('../images/single_off.png');
 }
+
 
 .error-message {
     position: relative;
@@ -541,12 +544,46 @@ div {
 }
 
 .imageviewer-no-images::after {
-    content: "No specimens with images";
+    content: "Did not find any media";
     color: #777;
     position: absolute;
-    top: 15px;;
-    left: 45px;
-    font-size: 16px;
+    top: 12px;;
+    left: 40px;
+    font-size: 14px;
     font-weight: bold;
     text-shadow: 0px -1px 0px #000;
+}
+
+.image-viewer-title span:after {
+    content: url("../images/dot.png");
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+iframe {
+    border: 0px;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.media-progress {
+    position: relative;
+    clear: left;
+    float: left;
+    display: inline-block;
+    padding: 2px;
+    color: #6a0;
+}
+
+.media-progress::before {
+    content: "Status:";
+    font-weight: bold;
+    color: #f60;
+    margin-right: 5px;
+}
+
+.phase-failed {
+    color: #f00;
 }

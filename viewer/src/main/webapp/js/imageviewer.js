@@ -26,7 +26,7 @@
 
     dcc.imageviewerVersion = 'DCC_IMAGEVIEWER_VERSION';
 
-    var isDragging = false, dragX, dragY,
+    var isDragging = false, dragX, dragY, syncControls = false,
         body = window.document.body,
         oldBodySelectStartHandler = body.onselectstart,
         oldBodyMouseUpHandler = body.onmouseup,
@@ -41,7 +41,7 @@
         /* Change this if you are including script from another web app */
         IMAGE_VIEWER_HOST = '',
         /* Root directory of the tiles on image server */
-        IMAGE_SERVER = 'http://images.mousephenotype.org/',
+        IMAGE_SERVER = 'https://www.mousephenotype.org/images/',
         IMAGE_TILE_SERVER = IMAGE_SERVER + 'tiles/',
         ORIGINAL_MEDIA_SERVER = IMAGE_SERVER + 'src/',
         INCLUDE_BOTH = 0x1,
@@ -75,7 +75,7 @@
      * @param {Integer} value New height.
      * @returns {Integer} Height of the DOM node.
      */
-    function height(node, value) {
+    function dom_height(node, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         if (value !== undefined)
@@ -90,7 +90,7 @@
      * @param {Integer} value New height.
      * @returns {Integer} width of the DOM node.
      */
-    function width(node, value) {
+    function dom_width(node, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         if (value !== undefined) {
@@ -106,7 +106,7 @@
      * @param {Integer} value New left.
      * @returns {Integer} width of the DOM node.
      */
-    function left(node, value) {
+    function dom_left(node, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         if (value !== undefined)
@@ -121,7 +121,7 @@
      * @param {Integer} value New top.
      * @returns {Integer} width of the DOM node.
      */
-    function top(node, value) {
+    function dom_top(node, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         if (value !== undefined)
@@ -137,7 +137,7 @@
      * @param {Integer} value New top.
      * @returns {Integer} width of the DOM node.
      */
-    function padding(node, which, value) {
+    function dom_padding(node, which, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         switch (which) {
@@ -163,7 +163,7 @@
      * @param {Integer} value New top.
      * @returns {Integer} width of the DOM node.
      */
-    function margin(node, which, value) {
+    function dom_margin(node, which, value) {
         if (typeof node === 'string')
             node = d3.select(node);
         switch (which) {
@@ -329,15 +329,9 @@
         this.minValue = values[0];
         this.maxValue = values[values.length - 1];
         this.valueRange = this.maxValue - this.minValue;
-        if (values.length > 2) {
+        if (values.length > 2)
             this.isSnapping = true;
-            this.valueIndex = defaultValue === undefined
-                ? Math.floor(values.length / 2) : defaultValue;
-            this.defaultValue = values[this.valueIndex];
-        } else {
-            this.defaultValue = defaultValue === undefined ?
-                .5 * (this.maxValue - this.minValue) : defaultValue;
-        }
+        this.setDefaultValue(defaultValue);
         this.onValueChange = onValueChange;
         this.sliderHeight = height;
         this.sliderWidth = width;
@@ -346,8 +340,108 @@
     };
     Slider.prototype = {
         /**
-         * Returns the current slider value.
+         * Returns the index and value after snapping the supplied value
+         * to the closest value in the list of values.
+         * 
+         * @param {Real} value Supplied value to snap.
+         * @returns {Object} Index and snapped value.
          */
+        getSnapValue: function(value) {
+            var me = this, values = me.values, i, c = values.length - 1;
+            for (i = 0; i < c; ++i)
+                if (values[i] <= value && value < values[i + 1])
+                    break;
+            if (i === c && value > values[i])
+                i = Math.floor(0.5 * values.length);
+            return {
+                'index': i,
+                'value': values[i]
+            };
+        },
+        /**
+         * Returns non-snapping value within the bounds.
+         * 
+         * @param {Real} value Supplied value.
+         * @returns {Real} Value within bounds.
+         */
+        getNonsnapValue: function(value) {
+            var me = this;
+            if (value === undefined
+                || value < me.minValue
+                || value > me.maxValue)
+                value = 0.5 * me.valueRange;
+            return value;
+        },
+        /**
+         * Set the default value to use when the supplied slider value is
+         * undefined or out-of-bounds.
+         * 
+         * @param {type} value Supplied value to set the slider to.
+         */
+        setDefaultValue: function(value) {
+            var me = this, temp;
+            if (me.isSnapping) {
+                temp = me.getSnapValue(value);
+                me.defaultValueIndex = temp.index;
+                me.defaultValue = temp.value;
+            } else
+                this.defaultValue = me.getNonsnapValue(value);
+        },
+        /**
+         * Increase or decrease the value index by increasing the current
+         * value index by supplied delta. This will also update the current
+         * slider value. This is only effective when the slider is in
+         * snapping value more.
+         * 
+         * @param {type} delta Integer increment or decrement value.
+         */
+        updateValueIndex: function(delta) {
+            var me = this, values = me.values, index;
+            if (me.isSnapping) {
+                index = me.valueIndex;
+                if (index === undefined)
+                    index = me.defaultValueIndex;
+                else {
+                    index += delta;
+                    if (index < 0)
+                        index = 0;
+                    else if (index > values.length - 1)
+                        index = values.length - 1;
+                }
+                if (me.valueIndex !== index) {
+                    me.valueIndex = index;
+                    me.activateSliderValueChange(values[index]);
+                }
+            }
+        },
+        /**
+         * Sets slider value and position of the slider button.
+         * 
+         * @param {Real} value New value for the slider.
+         */
+        setSliderValue: function(value) {
+            var me = this, temp;
+            if (value === undefined) {
+                if (me.isSnapping)
+                    me.valueIndex = me.defaultValueIndex;
+                value = me.defaultValue;
+            } else {
+                if (me.isSnapping) {
+                    temp = me.getSnapValue(value);
+                    me.valueIndex = temp.index;
+                    value = temp.value;
+                } else
+                    value = me.getNonsnapValue(value);
+            }
+            me.activateSliderValueChange(value);
+        },
+        activateSliderValueChange: function(value) {
+            var me = this;
+            me.value.node().value = value;
+            me.buttonLeft = me.positionFromValue();
+            dom_left(me.button, me.buttonLeft);
+            me.onValueChange(value);
+        },
         getSliderValue: function() {
             var me = this, currentValue = me.value.node().value;
             if (floatingPointRegEx.test(currentValue))
@@ -384,21 +478,6 @@
             return me.minButtonLeft + me.barWidth
                 * (value - me.minValue) / me.valueRange; /* lerp */
         },
-        setScaleIndex: function(delta) {
-            var me = this, values = me.values, newIndex;
-            if (me.isSnapping) {
-                newIndex = me.valueIndex + delta;
-                if (newIndex < 0)
-                    newIndex = 0;
-                else if (newIndex > values.length - 1)
-                    newIndex = values.length - 1;
-
-                if (me.valueIndex !== newIndex) {
-                    me.valueIndex = newIndex;
-                    me.setValue(values[newIndex]);
-                }
-            }
-        },
         /**
          * Converts current slider button position to slider value.
          * This is used for updating the slider value when the user drags the
@@ -407,7 +486,7 @@
         valueFromPosition: function() {
             var me = this, values, value, i, valueIndex;
             me.value.style('color', '#000000');
-            value = me.minValue + me.valueRange * (left(me.button)
+            value = me.minValue + me.valueRange * (dom_left(me.button)
                 + .5 * me.buttonWidth - me.barLeft) / me.barWidth; /* lerp */
             if (me.isSnapping) {
                 values = me.values;
@@ -432,7 +511,7 @@
             return function() {
                 preventEventBubbling();
                 mouseDown = true;
-                button.displacement = left(button) - pageX(d3.event);
+                button.displacement = dom_left(button) - pageX(d3.event);
                 /* prevent selection event when dragging */
                 body.onselectstart = function() {
                     return false;
@@ -455,7 +534,7 @@
                     /* keep slider button within range */
                     if (newPosition >= me.minButtonLeft
                         && newPosition <= me.maxButtonRight) {
-                        left(button, newPosition);
+                        dom_left(button, newPosition);
                         oldValue = me.value.node().value;
                         newValue = me.valueFromPosition();
                         if (oldValue !== newValue) {
@@ -497,28 +576,28 @@
                 /* vertical middle of the slider component */
                 midHeight = me.sliderHeight * .5,
                 /* label dimensions */
-                labelWidth = width(me.label),
-                labelHeight = height(me.label),
+                labelWidth = dom_width(me.label),
+                labelHeight = dom_height(me.label),
                 labelTop = midHeight - labelHeight * .5,
                 /* value box dimensions */
-                valueHeight = height(me.value)
-                + padding(me.value, STR_TOP)
-                + padding(me.value, STR_BOTTOM),
+                valueHeight = dom_height(me.value)
+                + dom_padding(me.value, STR_TOP)
+                + dom_padding(me.value, STR_BOTTOM),
                 valueTop = midHeight - valueHeight * .5,
-                resetWidth = width(me.reset),
-                minWidth = width(me.min),
-                maxWidth = width(me.max),
+                resetWidth = dom_width(me.reset),
+                minWidth = dom_width(me.min),
+                maxWidth = dom_width(me.max),
                 /* range contains the bar, button, and min and max labels */
                 rangeWidth = me.sliderWidth - labelWidth - resetWidth,
                 rangeTop = 0,
                 rangeHeight = me.sliderHeight,
                 /* horizontal bar dimensions */
                 barWidth = rangeWidth - minWidth - maxWidth,
-                barHeight = height(me.bar),
+                barHeight = dom_height(me.bar),
                 barTop = midHeight - barHeight * .5,
                 barLeft = minWidth,
                 /* slider button dimensions */
-                buttonHeight = height(me.button),
+                buttonHeight = dom_height(me.button),
                 buttonTop = midHeight - buttonHeight * .5,
                 /* min label dimensions */
                 minTop = midHeight - 9,
@@ -528,7 +607,7 @@
                 maxLeft = barLeft + barWidth;
             /* the following values are used when converting slider value to
              * button position, and vice versa */
-            me.buttonWidth = width(me.button);
+            me.buttonWidth = dom_width(me.button);
             me.halfButtonWidth = .5 * me.buttonWidth;
             me.barLeft = barLeft;
             me.barRight = barLeft + barWidth;
@@ -536,23 +615,23 @@
             me.minButtonLeft = barLeft - me.halfButtonWidth;
             me.maxButtonRight = me.barRight - me.halfButtonWidth;
             /* using the dimensions just calculated, resize components */
-            width(me.slider, me.sliderWidth);
-            height(me.slider, me.sliderHeight);
-            top(me.label, labelTop);
-            top(me.value, valueTop);
-            top(me.range, rangeTop);
-            width(me.range, rangeWidth);
-            height(me.range, rangeHeight);
-            top(me.bar, barTop);
-            width(me.bar, barWidth);
-            left(me.bar, barLeft);
-            top(me.button, buttonTop);
-            width(me.button, me.buttonWidth);
-            top(me.min, minTop);
-            left(me.min, minLeft);
-            top(me.max, maxTop);
-            left(me.max, maxLeft);
-            me.setValue();
+            dom_width(me.slider, me.sliderWidth);
+            dom_height(me.slider, me.sliderHeight);
+            dom_top(me.label, labelTop);
+            dom_top(me.value, valueTop);
+            dom_top(me.range, rangeTop);
+            dom_width(me.range, rangeWidth);
+            dom_height(me.range, rangeHeight);
+            dom_top(me.bar, barTop);
+            dom_width(me.bar, barWidth);
+            dom_left(me.bar, barLeft);
+            dom_top(me.button, buttonTop);
+            dom_width(me.button, me.buttonWidth);
+            dom_top(me.min, minTop);
+            dom_left(me.min, minLeft);
+            dom_top(me.max, maxTop);
+            dom_left(me.max, maxLeft);
+            me.setSliderValue();
             return me;
         },
         /**
@@ -576,7 +655,7 @@
              * Attach event handler that updates slider button position when the
              * value in this box changes. */
             me.value.on('keyup', function() {
-                me.setValue(me.value.node().value);
+                me.setSliderValue(me.value.node().value);
             });
             /* important to call this after attaching the event above */
             me.value.node().value = me.defaultValue;
@@ -592,7 +671,7 @@
                 id + '-reset', prefix + '-reset');
             me.reset.attr('title', 'Reset slider value');
             me.reset.on('click', function() {
-                me.setValue();
+                me.setSliderValue();
             });
             me.min = createNode(me.range, 'div',
                 id + '-min', prefix + '-min', me.minValue);
@@ -603,18 +682,6 @@
             me.onValueChange(me.value.value);
             return me;
         },
-        /**
-         * Sets slider value and position of the slider button.
-         * 
-         * @param {Real} value New value for the slider.
-         */
-        setValue: function(value) {
-            var me = this;
-            me.value.node().value = value === undefined ? me.defaultValue : value;
-            me.buttonLeft = me.positionFromValue();
-            me.button.style(STR_LEFT, me.buttonLeft + 'px');
-            me.onValueChange(me.defaultValue);
-        },
         hideSlider: function() {
             this.slider.style('visibility', 'hidden');
         },
@@ -623,12 +690,31 @@
         }
     };
 
+    function getControlSyncHandler(parent) {
+        return function(config) {
+            var comparative = parent.viewport.parent.parent;
+            if (comparative.panel === undefined) {
+                if (comparative.mutantPanel.viewer.title === parent.title)
+                    comparative.wildtypePanel.viewer.setControl(config);
+                else
+                    comparative.mutantPanel.viewer.setControl(config);
+            }
+        };
+    }
+
     function getZoomHandler(parent) {
         return function() {
-            var regionOfInterest = parent.regionOfInterest;
+            var scale = this.zoomSlider.getSliderValue(),
+                regionOfInterest = parent.regionOfInterest;
             if (regionOfInterest)
                 regionOfInterest.resize();
-            parent.viewport.scale(this.zoomSlider.getSliderValue());
+            parent.viewport.scale(scale);
+            if (syncControls) {
+                var handler = getControlSyncHandler(parent);
+                handler({
+                    'zoom': scale
+                });
+            }
         };
     }
 
@@ -644,6 +730,12 @@
             parent.imageProcessingConfig.brightness =
                 this.brightnessSlider.getSliderValue();
             parent.viewport.refresh();
+            if (syncControls) {
+                var handler = getControlSyncHandler(parent);
+                handler({
+                    'brightness': parent.imageProcessingConfig.brightness
+                });
+            }
         };
     }
 
@@ -653,6 +745,12 @@
             parent.imageProcessingConfig.contrast =
                 this.contrastSlider.getSliderValue();
             parent.viewport.refresh();
+            if (syncControls) {
+                var handler = getControlSyncHandler(parent);
+                handler({
+                    'contrast': parent.imageProcessingConfig.contrast
+                });
+            }
         };
     }
 
@@ -662,6 +760,12 @@
                 !parent.imageProcessingConfig.invert;
             forceRenderingOfAllCanvases(parent.viewportContainer);
             parent.viewport.refresh();
+            if (syncControls) {
+                var handler = getControlSyncHandler(parent);
+                handler({
+                    'invert': parent.imageProcessingConfig.invert
+                });
+            }
         };
     }
 
@@ -671,6 +775,11 @@
                 !parent.imageProcessingConfig[channel];
             forceRenderingOfAllCanvases(parent.viewportContainer);
             parent.viewport.refresh();
+            if (syncControls) {
+                var handler = getControlSyncHandler(parent), config = {};
+                config[channel] = parent.imageProcessingConfig[channel];
+                handler(config);
+            }
         };
     }
 
@@ -679,23 +788,21 @@
         this.viewport = obj.viewport;
         this.container = obj.viewportContainer;
         this.scales = obj.scales;
-        this.scaleIndex = obj.scales.length - 1;
         this.init();
     }
 
     function addCheckbox(container, label, handler, defaultValue) {
-        var temp = container.append('input')
+        var checkbox = container.append('div')
             .attr('class', 'image-processing-checkbox')
-            .attr('type', 'checkbox')
-            .on('click', handler), node = temp.node();
-        addDiv(container, null, 'image-processing-checkbox-label', label)
+            .text(label)
             .on('click', function() {
-                node.checked = !node.checked;
+                checkbox.classed('checked', !checkbox.classed('checked'));
                 if (handler)
                     handler();
             });
         if (defaultValue !== undefined)
-            node.checked = defaultValue;
+            checkbox.classed('checked', defaultValue);
+        return checkbox;
     }
 
     ViewControl.prototype = {
@@ -718,7 +825,7 @@
                 'zoom-slider', 'Zoom:', 26, 420,
                 function() {
                     throttle(zoomHandler, 0, me);
-                }, me.scales, me.scaleIndex);
+                }, me.scales);
 
             me.brightnessSlider = new Slider(me.node,
                 'brightness-slider', 'Brightness:', 26, 420,
@@ -732,23 +839,76 @@
                     throttle(contrastHandler, 0, me);
                 }, [0, 3.0], 1.0);
 
-            me.zoomValue = me.zoomSlider.valueFromPosition();
-            me.brightnessValue = me.brightnessSlider.valueFromPosition();
-            me.contrastValue = me.contrastSlider.valueFromPosition();
             me.events();
-
             temp = me.node.append('div').attr('class', 'checkbox-container');
-            addCheckbox(temp, 'Invert colour', toggleColourInversion, false);
-            addCheckbox(temp, 'Red', toggleRedChannel, true);
-            addCheckbox(temp, 'Green', toggleGreenChannel, true);
-            addCheckbox(temp, 'Blue', toggleBlueChannel, true);
+            me.invertColorCheckbox = addCheckbox(temp, 'Invert colour',
+                toggleColourInversion, false);
+            me.redChannelCheckbox = addCheckbox(temp, 'Red',
+                toggleRedChannel, true);
+            me.greeenChannelCheckbox = addCheckbox(temp, 'Green',
+                toggleGreenChannel, true);
+            me.blueChannelCheckbox = addCheckbox(temp, 'Blue',
+                toggleBlueChannel, true);
+        },
+        getControl: function() {
+            var me = this;
+            return {
+                'zoom': me.zoomSlider.getSliderValue(),
+                'brightness': me.brightnessSlider.getSliderValue(),
+                'contrast': me.contrastSlider.getSliderValue()
+            };
+        },
+        setControl: function(config) {
+            var me = this, checkbox, checked;
+            if (config) {
+                if (config.zoom !== undefined
+                    && config.zoom !== me.zoomSlider.getSliderValue()) {
+                    me.zoomSlider.setSliderValue(config.zoom);
+                }
+                if (config.brightness !== undefined && config.brightness !==
+                    me.brightnessSlider.getSliderValue()) {
+                    me.brightnessSlider.setSliderValue(config.brightness);
+                }
+                if (config.contrast !== undefined
+                    && config.contrast !== me.contrastSlider.getSliderValue()) {
+                    me.contrastSlider.setSliderValue(config.contrast);
+                }
+                if (config.invert !== undefined) {
+                    checkbox = me.invertColorCheckbox;
+                    checked = checkbox.classed('checked');
+                    if ((config.invert && !checked) ||
+                        (!config.invert && checked))
+                        checkbox.on("click")();
+                }
+                if (config.red !== undefined) {
+                    checkbox = me.redChannelCheckbox;
+                    checked = checkbox.classed('checked');
+                    if ((config.red && !checked) ||
+                        (!config.red && checked))
+                        checkbox.on("click")();
+                }
+                if (config.green !== undefined) {
+                    checkbox = me.greenChannelCheckbox;
+                    checked = checkbox.classed('checked');
+                    if ((config.green && !checked) ||
+                        (!config.green && checked))
+                        checkbox.on("click")();
+                }
+                if (config.blue !== undefined) {
+                    checkbox = me.blueChannelCheckbox;
+                    checked = checkbox.classed('checked');
+                    if ((config.blue && !checked) ||
+                        (!config.blue && checked))
+                        checkbox.on("click")();
+                }
+            }
         },
         refit: function() {
             var me = this;
-            me.controlWidth = width(me.node);
-            me.controlHeight = height(me.node);
-            me.containerWidth = width(me.container);
-            me.containerHeight = height(me.container);
+            me.controlWidth = dom_width(me.node);
+            me.controlHeight = dom_height(me.node);
+            me.containerWidth = dom_width(me.container);
+            me.containerHeight = dom_height(me.container);
         },
         bound: function(left, top) {
             var me = this,
@@ -783,13 +943,10 @@
                 preventEventBubbling();
                 if (isDragging) {
                     var coord = d3.mouse(this.parentNode),
-                        dx = dragX - coord[0],
-                        dy = dragY - coord[1],
-                        left = parseInt(node.style(STR_LEFT)) - dx,
-                        top = parseInt(node.style(STR_TOP)) - dy,
-                        leftTop = me.bound(left, top);
-                    node.style(STR_LEFT, leftTop.l + 'px')
-                        .style(STR_TOP, leftTop.t + 'px');
+                        dx = dragX - coord[0], dy = dragY - coord[1],
+                        leftTop = me.bound(dom_left(node) - dx, dom_top(node) - dy);
+                    dom_left(node, leftTop.l);
+                    dom_top(node, leftTop.t);
                     dragX = coord[0];
                     dragY = coord[1];
                 }
@@ -804,15 +961,15 @@
         },
         width: function() {
             var me = this;
-            return width(me.node);
+            return dom_width(me.node);
         },
         height: function() {
             var me = this;
-            return height(me.node);
+            return dom_height(me.node);
         },
         scale: function(delta) {
             var me = this;
-            me.zoomSlider.setScaleIndex(delta);
+            me.zoomSlider.updateValueIndex(delta);
         },
         getScale: function() {
             var me = this;
@@ -843,7 +1000,7 @@
         },
         width: function() {
             var me = this;
-            return width(me.node);
+            return dom_width(me.node);
         },
         scale: function(percentage) {
             var me = this, layer, layers = me.layers, parent = me.parent;
@@ -870,7 +1027,7 @@
         },
         height: function() {
             var me = this;
-            return height(me.node);
+            return dom_height(me.node);
         },
         drag: function(dx, dy) {
             var me = this, layer, layers = me.layers, parent = me.parent;
@@ -936,7 +1093,9 @@
             node.on('mouseup', function() {
                 preventEventBubbling();
                 if (isDragging) {
-                    me.layerStack.classed('grabbing', false).classed('grab', true);
+                    me.layerStack
+                        .classed('grabbing', false)
+                        .classed('grab', true);
                     isDragging = false;
                 }
             });
@@ -944,8 +1103,8 @@
                 ? "DOMMouseScroll" : "mousewheel";
             me.node.on(mousewheelEventName, function() {
                 preventEventBubbling();
-                var e = d3.event,
-                    delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+                var e = d3.event, delta = Math.max(-1, Math.min(1,
+                    (e.wheelDelta || -e.detail)));
                 parent.viewControl.scale(delta);
             });
         }
@@ -977,8 +1136,8 @@
                 me.width = dim.width;
                 me.contentHeight = dim.contentHeight;
                 me.contentWidth = dim.contentWidth;
-                width(me.node, me.width);
-                height(me.node, me.height);
+                dom_width(me.node, me.width);
+                dom_height(me.node, me.height);
                 me.center();
                 content.refresh();
             }
@@ -997,9 +1156,8 @@
         },
         center: function() {
             var me = this, viewport = me.viewport;
-            me.node
-                .style(STR_TOP, ((viewport.height() - me.contentHeight) * 0.5) + 'px')
-                .style(STR_LEFT, ((viewport.width() - me.contentWidth) * 0.5) + 'px');
+            dom_top(me.node, (viewport.height() - me.contentHeight) * 0.5);
+            dom_left(me.node, (viewport.width() - me.contentWidth) * 0.5);
         },
         getViewport: function() {
             var me = this;
@@ -1016,28 +1174,28 @@
         },
         displace: function(dx, dy) {
             var me = this, node = me.node,
-                l = left(node) - dx, t = top(node) - dy;
+                l = dom_left(node) - dx, t = dom_top(node) - dy;
             if (l <= 0 && l > me.viewport.width() - me.contentWidth)
-                node.style(STR_LEFT, l + 'px');
+                dom_left(node, l);
             if (t <= 0 && t > me.viewport.height() - me.contentHeight)
-                node.style(STR_TOP, t + 'px');
+                dom_top(node, t);
             me.content.refresh();
         },
         move: function(left, top) {
             var me = this, node = me.node;
             if (left <= 0 && left > me.viewport.width() - me.contentWidth)
-                node.style(STR_LEFT, left + 'px');
+                dom_left(node, left);
             if (top <= 0 && top > me.viewport.height() - me.contentHeight)
-                node.style(STR_TOP, top + 'px');
+                dom_top(node, top);
             me.content.refresh();
         },
         left: function() {
             var me = this;
-            return parseInt(me.node.style(STR_LEFT));
+            return dom_left(me.node);
         },
         top: function() {
             var me = this;
-            return parseInt(me.node.style(STR_TOP));
+            return dom_top(me.node);
         }
     };
 
@@ -1238,16 +1396,12 @@
             context.qid + '/' + media.id + '.' + media.e;
     }
 
-    function getSpecimenSelectionHandler(obj, image, roi) {
+    function getImageSelectionHandler(obj, image, roi) {
         var viewport = obj.viewport;
         return function() {
             var node = d3.select(this), parent = d3.select(this.parentNode);
             parent.selectAll('.active').classed('active', false);
             node.classed('active', true);
-
-            if (width(obj.viewportContainer) === 0)
-                showImageTiles(this.thumbnailIndex
-                    * parseInt(node.style('height')));
 
             replaceImageTileLayer(image, obj);
             if (roi.scale !== viewport.getScale())
@@ -1255,9 +1409,38 @@
             roi.move(viewport.left(), viewport.top());
             obj.regionOfInterest = roi;
             if (obj.download)
-                obj.download.attr('href', getMediaUrl(image, obj));
+                obj.download.attr('href', getMediaUrl(image, obj.context));
             this.scrollIntoView(true);
         };
+    }
+
+    function replacePdfIframe(viewport, url) {
+        var iframe;
+        viewport.selectAll('*').remove();
+        iframe = viewport.append('iframe')
+            .attr('src', url)
+            .attr('frameborder', 0);
+    }
+
+    function getMediaSelectionHandler(obj, media) {
+        return function() {
+            var node = d3.select(this),
+                parent = d3.select(this.parentNode),
+                url = getMediaUrl(media, obj.context);
+            parent.selectAll('.active').classed('active', false);
+            node.classed('active', true);
+            this.scrollIntoView(true);
+
+            if (media.e === 'pdf')
+                replacePdfIframe(obj.viewportContainer, url);
+        };
+    }
+
+    function getSpecimenSelectionHandler(obj, media, roi) {
+        if (roi === undefined)
+            return getMediaSelectionHandler(obj, media);
+        else
+            return getImageSelectionHandler(obj, media, roi);
     }
 
     /**
@@ -1308,8 +1491,8 @@
             if (me.rw > me.tw)
                 me.rw = me.tw;
 
-            width(me.roi, me.rw);
-            height(me.roi, me.rh);
+            dom_width(me.roi, me.rw);
+            dom_height(me.roi, me.rh);
         },
         events: function() {
             var me = this, roi = me.roi;
@@ -1328,13 +1511,11 @@
                 preventEventBubbling();
                 if (isDragging) {
                     var coord = d3.mouse(this.parentNode),
-                        dx = dragX - coord[0],
-                        dy = dragY - coord[1],
-                        left = parseInt(roi.style(STR_LEFT)) - dx,
-                        top = parseInt(roi.style(STR_TOP)) - dy,
+                        left = dom_left(roi) - (dragX - coord[0]),
+                        top = dom_top(roi) - (dragY - coord[1]),
                         leftTop = me.bound(left, top);
-                    roi.style(STR_LEFT, leftTop.l + 'px')
-                        .style(STR_TOP, leftTop.t + 'px');
+                    dom_left(roi, leftTop.l);
+                    dom_top(roi, leftTop.t);
                     leftTop = me.roiToViewport(leftTop.l, leftTop.t);
                     me.viewport.move(leftTop.l, leftTop.t);
                     dragX = coord[0];
@@ -1384,12 +1565,12 @@
                 't': top
             };
         },
-        move: function(sl, st) {
-            var me = this, loc = me.viewportToRoi(sl, st);
-            me.roi.style('height', me.rh + 'px')
-                .style('width', me.rw + 'px')
-                .style(STR_LEFT, loc.l + 'px')
-                .style(STR_TOP, loc.t + 'px');
+        move: function(left, top) {
+            var me = this, loc = me.viewportToRoi(left, top);
+            dom_height(me.roi, me.rh);
+            dom_width(me.roi, me.rw);
+            dom_left(me.roi, loc.l);
+            dom_top(me.roi, loc.t);
         }
     };
     function addRoiSelector(thumbnail, image, viewport) {
@@ -1456,47 +1637,134 @@
         return c + '</tbody></table>';
     }
 
+    function addImageThumbnail(selector, thumbnail, media, obj) {
+        var roiObj, img, viewport = obj.viewport,
+            roiSelector = thumbnail.append('div')
+            .attr('class', 'thumbnail-img');
+
+        img = roiSelector.append('img')
+            .attr('src-hold', getThumbnailUrl(media));
+        if (isVisible(img.node(), selector))
+            img.attr('src', img.attr('src-hold'));
+        roiObj = addRoiSelector(roiSelector, media, viewport);
+        thumbnail.node().onmouseup =
+            getSpecimenSelectionHandler(obj, media, roiObj);
+    }
+
+    function addMediaThumbnail(thumbnail, media, obj) {
+        thumbnail.node().onmouseup =
+            getSpecimenSelectionHandler(obj, media);
+        thumbnail.append('a')
+            .attr('href', getMediaUrl(media, obj.context))
+            .attr('target', '_blank')
+            .append('div')
+            .attr('class', 'thumbnail-' + media.e)
+            .html(media.e + ' document');
+    }
+
+    function getMediaStatusMessage(status) {
+        var msg = '';
+        /* values must correspond to phenodcc_media.a_status */
+        switch (status) {
+            case 1:
+                msg = 'is pending';
+                break;
+            case 2:
+                msg = 'is running';
+                break;
+            case 3:
+                msg = 'has finished';
+                break;
+            case 4:
+                msg = 'was cancelled';
+                break;
+            case 5:
+                msg = 'has failed';
+                break;
+        }
+        return '<span class="media-status">' + msg + '</span>';
+    }
+
+    function getMediaPhaseMessage(phase) {
+        var msg = '';
+        /* values must correspond to phenodcc_media.phase */
+        switch (phase) {
+            case 1:
+                msg = 'Media download ';
+                break;
+            case 2:
+                msg = 'Checksum calculation ';
+                break;
+            case 3:
+                msg = 'Tile generation ';
+                break;
+        }
+        return '<span class="media-phase">' + msg + '</span>';
+    }
+
+    function getMediaProgress(media) {
+        var msg = '';
+        /* image media: requires three phases */
+        if (media.i) {
+            if (media.p < 3 && media.s === 3) {
+                /* if not all phases are done, show next phase pending */
+                msg = getMediaPhaseMessage(media.p + 1);
+                msg += getMediaStatusMessage(1);
+            } else {
+                /* otherwise. show the current phase and status */
+                msg = getMediaPhaseMessage(media.p);
+                msg += getMediaStatusMessage(media.s);
+            }
+        } else {
+            if (media.p < 2 && media.s === 3) {
+                msg = getMediaPhaseMessage(media.p + 1);
+                msg += getMediaStatusMessage(1);
+            } else {
+                msg = getMediaPhaseMessage(media.p);
+                msg += getMediaStatusMessage(media.s);
+            }
+        }
+        return msg;
+    }
+
+    function showMediaProgress(thumbnail, media) {
+        thumbnail.append('div')
+            .attr('class', 'media-progress')
+            .classed('phase-failed', media.s === 5)
+            .html(getMediaProgress(media));
+    }
+
     function addThumbnail(obj, media, index) {
-        var selector = obj.specimenSelector,
+        var showProgress = true, selector = obj.specimenSelector,
             selectorDom = selector.node(),
             thumbnail = selector.append('div')
             .attr('class', 'thumbnail')
             .attr('mid', media.mid)
-            .attr('aid', media.aid),
-            roiSelector, roiObj, img,
-            viewport = obj.viewport,
-            info = thumbnail.append('div')
+            .attr('aid', media.aid);
+
+        thumbnail.append('div')
             .attr('class', 'animal-media')
             .html(getMediaDetails(media));
 
         obj.regionOfInterest = undefined;
         thumbnail.node().thumbnailIndex = index;
+
         if (media.i) { /* media is image */
-            if (media.c) { /* media checksum is defined */
-                roiSelector = thumbnail.append('div')
-                    .attr('class', 'thumbnail-img');
-                img = roiSelector.append('img')
-                    .attr('src-hold', getThumbnailUrl(media));
-                if (isVisible(img.node(), selectorDom))
-                    img.attr('src', img.attr('src-hold'));
-                roiObj = addRoiSelector(roiSelector, media, viewport);
-                thumbnail.node().onmouseup =
-                    getSpecimenSelectionHandler(obj, media, roiObj);
-            } else {
-                thumbnail.classed('no-media-data', true);
+            /* if image tiles were generated successfully */
+            if (media.p === 3 && media.s === 3) {
+                addImageThumbnail(selectorDom, thumbnail, media, obj);
+                showProgress = false;
             }
         } else {
-            if (media.c) {
-                thumbnail.append('a')
-                    .attr('href', getMediaUrl(media, obj))
-                    .attr('target', '_blank')
-                    .append('div')
-                    .attr('class', 'thumbnail-' + media.e)
-                    .html('PDF document');
-            } else {
-                thumbnail.classed('no-media-data', true);
+            /* if media downloaded successfully and checksum was calculated */
+            if (media.p === 2 && media.s === 3) {
+                addMediaThumbnail(thumbnail, media, obj);
+                showProgress = false;
             }
         }
+
+        if (showProgress)
+            showMediaProgress(thumbnail, media);
     }
 
     function downloadMediaDetails(obj, successHandler, failureHandler, container) {
@@ -1621,22 +1889,22 @@
         switch (obj.selectorOrientation) {
             case STR_LEFT:
             case STR_RIGHT:
-                temp = height(obj.container) - temp;
-                height(viewportContainer, temp);
-                height(specimenSelector, temp);
-                width(specimenSelector, SPECIMEN_SELECTOR_WIDTH);
-                width(viewportContainer,
-                    width(obj.container) - width(obj.specimenSelector));
+                temp = dom_height(obj.container) - temp;
+                dom_height(viewportContainer, temp);
+                dom_height(specimenSelector, temp);
+                dom_width(specimenSelector, SPECIMEN_SELECTOR_WIDTH);
+                dom_width(viewportContainer,
+                    dom_width(obj.container) - dom_width(obj.specimenSelector));
                 break;
             case STR_TOP:
             case STR_BOTTOM:
             default:
-                temp = width(obj.container) - temp;
-                width(viewportContainer, temp);
-                width(specimenSelector, temp);
-                height(specimenSelector, SPECIMEN_SELECTOR_HEIGHT);
-                height(viewportContainer,
-                    height(obj.container) - height(obj.specimenSelector));
+                temp = dom_width(obj.container) - temp;
+                dom_width(viewportContainer, temp);
+                dom_width(specimenSelector, temp);
+                dom_height(specimenSelector, SPECIMEN_SELECTOR_HEIGHT);
+                dom_height(viewportContainer,
+                    dom_height(obj.container) - dom_height(obj.specimenSelector));
         }
         obj.viewControl.refit();
         obj.specimenSelector.node().onscroll();
@@ -1645,7 +1913,8 @@
         obj.viewport.refit();
     }
 
-    dcc.ImageViewer = function(container, selectorOrientation) {
+    dcc.ImageViewer = function(container, selectorOrientation, obj) {
+        this.parent = obj;
         this.container = container;
         this.id = container.id;
         this.title = container.title;
@@ -1711,17 +1980,26 @@
         updateNotification: function(cls, show) {
             var me = this;
             me.specimenSelector.classed(cls, show);
+        },
+        setControl: function(config) {
+            var me = this;
+            me.viewControl.setControl(config);
+        },
+        getControl: function() {
+            var me = this;
+            return me.viewControl.getControl();
         }
     };
 
-    function addImageViewerPanel(container, id, cls, orientation, title, splitType) {
-        var panel = container.append('div')
+    function addImageViewerPanel(obj, id, cls, orientation, title, splitType) {
+        var container = obj.content, panel = container.append('div')
             .attr('id', id)
             .attr('class', cls);
+        panel.parent = obj;
         panel.title = title;
         panel.id = id;
         panel.splitType = splitType;
-        panel.viewer = new dcc.ImageViewer(panel, orientation);
+        panel.viewer = new dcc.ImageViewer(panel, orientation, obj);
         return panel;
     }
 
@@ -1798,7 +2076,7 @@
                     }
                 });
 
-            if (parent.splitType !== undefined)
+            if (parent.splitType !== undefined) {
                 toolbar.append('div')
                     .attr('class', 'switch-split-type')
                     .attr('title', 'Click to switch between vertical/horizontal splitting')
@@ -1822,6 +2100,21 @@
                             parent.split(false);
                         }
                     });
+                toolbar.append('div')
+                    .attr('class', 'sync-comparative')
+                    .attr('title', 'Click to sync controls between comparative images')
+                    .classed(STR_CONTROL_IS_ON, syncControls)
+                    .on('click', function() {
+                        var node = d3.select(this);
+                        if (node.classed(STR_CONTROL_IS_ON)) {
+                            node.classed(STR_CONTROL_IS_ON, false);
+                            syncControls = false;
+                        } else {
+                            node.classed(STR_CONTROL_IS_ON, true);
+                            syncControls = true;
+                        }
+                    });
+            }
             me.node = toolbar;
         }
     };
@@ -1857,37 +2150,36 @@
 
             me.clear();
             me.toolbar = new ViewerToolbar(me);
-            content = container.append('div').attr('class', 'viewer-panels');
-            height(content, height(container) - height(me.toolbar.node));
+            me.content = container.append('div').attr('class', 'viewer-panels');
+            dom_height(me.content, dom_height(container) - dom_height(me.toolbar.node));
 
             switch (me.splitType) {
                 case 'vertical':
-                    me.wildtypePanel = addImageViewerPanel(content,
+                    me.wildtypePanel = addImageViewerPanel(me,
                         STR_IMAGE_PANEL + STR_WILDTYPE + id,
                         STR_IMAGE_PANEL + STR_LEFT,
                         STR_BOTTOM, STR_WILDTYPE, me.splitType);
-                    me.mutantPanel = addImageViewerPanel(content,
+                    me.mutantPanel = addImageViewerPanel(me,
                         STR_IMAGE_PANEL + STR_MUTANT + id,
                         STR_IMAGE_PANEL + STR_RIGHT,
                         STR_BOTTOM, STR_MUTANT, me.splitType);
                     break;
                 case 'horizontal':
-                    me.wildtypePanel = addImageViewerPanel(content,
+                    me.wildtypePanel = addImageViewerPanel(me,
                         STR_IMAGE_PANEL + STR_WILDTYPE + id,
                         STR_IMAGE_PANEL + STR_TOP,
                         STR_LEFT, STR_WILDTYPE, me.splitType);
-                    me.mutantPanel = addImageViewerPanel(content,
+                    me.mutantPanel = addImageViewerPanel(me,
                         STR_IMAGE_PANEL + STR_MUTANT + id,
                         STR_IMAGE_PANEL + STR_BOTTOM,
                         STR_LEFT, STR_MUTANT, me.splitType);
                     break;
                 default:
-                    me.panel = addImageViewerPanel(content,
+                    me.panel = addImageViewerPanel(me,
                         STR_IMAGE_PANEL + STR_WILDTYPE + id,
                         STR_IMAGE_PANEL + 'single',
                         STR_LEFT);
             }
-            me.content = content;
             d3.select(window).on('resize', function() {
                 me.refit();
             });
@@ -1946,8 +2238,8 @@
         activateContext: function(forcedUpdate) {
             var me = this, container = null;
             if (forcedUpdate || !me.data) {
+                me.updateNotification(STR_NO_IMAGES, false);
                 me.updateNotification(STR_LOADING, true);
-                me.updateNotification(STR_NO_IMAGES, true);
                 downloadMediaDetails(me,
                     function(data) {
                         me.data = data;
@@ -1957,6 +2249,7 @@
                     function() {
                         delete me.data;
                         me.updateNotification(STR_LOADING, false);
+                        me.updateNotification(STR_NO_IMAGES, true);
                     }, container);
             } else
                 me.applyContext();
@@ -1976,7 +2269,7 @@
         },
         refit: function() {
             var me = this;
-            height(me.content, height(me.container) - height(me.toolbar.node));
+            dom_height(me.content, dom_height(me.container) - dom_height(me.toolbar.node));
             if (me.splitType === undefined)
                 me.panel.viewer.refit();
             else {
@@ -2044,10 +2337,21 @@
             me.container.selectAll('.view-control')
                 .style('display', doShow ? 'block' : 'none');
         },
+        setControl: function(config) {
+            var me = this;
+            if (me.panel)
+                me.panel.viewer.setControl(config);
+            else {
+                me.wildtypePanel.viewer.setControl(config);
+                me.mutantPanel.viewer.setControl(config);
+            }
+        },
         toggleMode: function(mode) {
             var me = this;
             me.splitType = mode === 'single' ? undefined : 'vertical';
-            me.panel = me.wildtypePanel = me.mutantPanel = null;
+            delete me.panel;
+            delete me.wildtypePanel;
+            delete me.mutantPanel;
             me.render();
             me.activateContext();
         }
