@@ -21,6 +21,7 @@
     <class>org.mousephenotype.dcc.entities.overviews.Strain</class>
     <class>org.mousephenotype.dcc.entities.overviews.AnimalOverview</class>
     <class>org.mousephenotype.dcc.entities.overviews.MeasurementsPerformed</class>
+    <class>org.mousephenotype.dcc.entities.overviews.MetadataGroupToValues</class>
     <class>org.mousephenotype.dcc.entities.overviews.ProceduresPerformed</class>
     <class>org.mousephenotype.dcc.entities.overviews.ProcedureAnimalOverview</class>
     <!-- project entities -->

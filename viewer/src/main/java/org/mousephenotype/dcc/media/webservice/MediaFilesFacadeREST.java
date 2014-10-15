@@ -15,14 +15,17 @@
  */
 package org.mousephenotype.dcc.media.webservice;
 
-import javax.ejb.Asynchronous;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import org.mousephenotype.dcc.entities.overviews.MetadataGroupToValues;
+import org.mousephenotype.dcc.entities.overviews.ProcedureMetadataGroup;
 import org.mousephenotype.dcc.media.entities.MediaFileDetail;
 
 /**
@@ -38,52 +41,175 @@ public class MediaFilesFacadeREST extends AbstractFacade<MediaFileDetail> {
         super(MediaFileDetail.class);
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("{cid}/{gid}/{sid}/{pid}/{qid}")
-    @Asynchronous
-    public void extjsFindBy(
-            @Suspended
-            final AsyncResponse asyncResponse, @PathParam(value = "cid")
-            final Integer centreId, @PathParam(value = "gid")
-            final Integer genotypeId, @PathParam(value = "sid")
-            final Integer strainId, @PathParam(value = "pid")
-            final Integer procedureId, @PathParam(value = "qid")
-            final Integer parameterId, @QueryParam(value = "lid")
-            final Integer pipelineId, @QueryParam(value = "includeBaseline")
-            final Boolean includeBaseline) {
-        asyncResponse.resume(doExtjsFindBy(centreId, genotypeId, strainId,
-                procedureId, parameterId, pipelineId, includeBaseline));
+    private List<MediaFileDetail> getMutantMediaFiles(
+            Integer centreId,
+            Integer genotypeId,
+            Integer strainId,
+            String parameterKey,
+            Integer pipelineId,
+            Integer procedureId) {
+        EntityManager em = getEntityManager();
+        List<MediaFileDetail> temp = new ArrayList<>();
+        try {
+            String namedQuery = "MediaFile.findMutantMediaFiles";
+            if (pipelineId != null && procedureId != null) {
+                namedQuery += "ProcedurePipeline";
+            }
+            TypedQuery<MediaFileDetail> query
+                    = em.createNamedQuery(namedQuery, MediaFileDetail.class);
+            query.setParameter("centreId", centreId);
+            query.setParameter("genotypeId", genotypeId);
+            query.setParameter("strainId", strainId);
+            query.setParameter("parameterKey", parameterKey);
+            if (pipelineId != null && procedureId != null) {
+                query.setParameter("procedureId", procedureId);
+                query.setParameter("pipelineId", pipelineId);
+            }
+            temp = query.getResultList();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            em.close();
+        }
+        return temp;
     }
 
-    private MediaFileDetailsPack doExtjsFindBy(
-            @PathParam("cid") Integer centreId,
-            @PathParam("gid") Integer genotypeId,
-            @PathParam("sid") Integer strainId,
-            @PathParam("pid") Integer procedureId,
-            @PathParam("qid") Integer parameterId,
+    private List<MediaFileDetail> getBaselineMediaFiles(
+            Integer centreId,
+            Integer strainId,
+            String parameterKey,
+            ProcedureMetadataGroup t,
+            Integer pipelineId,
+            Integer procedureId) {
+        EntityManager em = getEntityManager();
+        List<MediaFileDetail> temp = new ArrayList<>();
+        try {
+            String namedQuery = "MediaFile.findBaselineMediaFiles";
+            if (pipelineId != null && procedureId != null) {
+                namedQuery += "ProcedurePipeline";
+            }
+            TypedQuery<MediaFileDetail> query
+                    = em.createNamedQuery(namedQuery, MediaFileDetail.class);
+            query.setParameter("centreId", centreId);
+            query.setParameter("strainId", strainId);
+            query.setParameter("parameterKey", parameterKey);
+            query.setParameter("metadataGroup", t.getMetadataGroup());
+            if (pipelineId != null && procedureId != null) {
+                query.setParameter("procedureId", procedureId);
+                query.setParameter("pipelineId", pipelineId);
+            }
+            temp = query.getResultList();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            em.close();
+        }
+        return temp;
+    }
+
+    private MetadataGroupToValues getMetadataGroupValue(String mg) {
+        MetadataGroupToValues v = null;
+        EntityManager em = getEntityManager();
+        try {
+            TypedQuery<MetadataGroupToValues> query
+                    = em.createNamedQuery(
+                            "MetadataGroupToValues.findByMetadataGroup",
+                            MetadataGroupToValues.class);
+            query.setParameter("metadataGroup", mg);
+            query.setMaxResults(1);
+            v = query.getSingleResult();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            em.close();
+        }
+        return v;
+    }
+
+    // We do not wish to send the meta-data group checksum or the values
+    // for every measurement. So, we group all of the distinct meta-data groups
+    // and send them with the measurements. Within each measurement, we replace
+    // the meta-data group checksum with the id.
+    private List<MetadataGroupToValues> convertMetadataGroupsToIndices(List<MediaFileDetail> g) {
+        List<MetadataGroupToValues> mgs = new ArrayList<>();
+        HashMap<String, MetadataGroupToValues> distinct = new HashMap<>();
+        Iterator<MediaFileDetail> i = g.iterator();
+        while (i.hasNext()) {
+            MediaFileDetail v = i.next();
+            String checksum = v.getMetadataGroup();
+            MetadataGroupToValues mg = distinct.get(checksum);
+            if (mg == null) {
+                mg = getMetadataGroupValue(checksum);
+                if (mg != null) {
+                    distinct.put(checksum, mg);
+                    mgs.add(mg);
+                }
+            }
+            v.setMetadataGroupIndex(mg == null
+                    ? -1L : mg.getMetadataGroupToValuesId());
+        }
+        return mgs;
+    }
+
+    public List<ProcedureMetadataGroup> getProcedureMetadataGroups(
+            Integer centreId,
+            Integer genotypeId,
+            Integer strainId,
+            String parameterKey) {
+        List<ProcedureMetadataGroup> t = null;
+        EntityManager em = getEntityManager();
+        try {
+            TypedQuery<ProcedureMetadataGroup> q
+                    = em.createNamedQuery("ProcedureAnimalOverview.findByCidGidSidQeid",
+                            ProcedureMetadataGroup.class);
+            q.setParameter("centreId", centreId);
+            q.setParameter("genotypeId", genotypeId);
+            q.setParameter("strainId", strainId);
+            q.setParameter("parameterId", parameterKey);
+            t = q.getResultList();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            em.close();
+        }
+        return t;
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public MediaFileDetailsPack extjsFindBy(
+            @QueryParam("cid") Integer centreId,
             @QueryParam("lid") Integer pipelineId,
+            @QueryParam("gid") Integer genotypeId,
+            @QueryParam("sid") Integer strainId,
+            @QueryParam("pid") Integer procedureId,
+            @QueryParam("qeid") String parameterKey,
             @QueryParam("includeBaseline") Boolean includeBaseline) {
         MediaFileDetailsPack p = new MediaFileDetailsPack();
         if (centreId == null || genotypeId == null || strainId == null
-                || procedureId == null || parameterId == null) {
+                || parameterKey == null || parameterKey.isEmpty()) {
             p.setDataSet(null, 0L);
         } else {
-            EntityManager em = getEntityManager();
-            TypedQuery<MediaFileDetail> query
-                    = em.createNamedQuery(pipelineId == null
-                            ? "MediaFile.findIgnorePipeline" : "MediaFile.find",
-                            MediaFileDetail.class);
-            query.setParameter("cid", centreId);
-            query.setParameter("gid", genotypeId);
-            query.setParameter("sid", strainId);
-            query.setParameter("pid", procedureId);
-            query.setParameter("qid", parameterId);
-            if (pipelineId != null) {
-                query.setParameter("lid", pipelineId);
+            List<ProcedureMetadataGroup> t = getProcedureMetadataGroups(
+                    centreId, genotypeId, strainId, parameterKey);
+            if (t == null || t.isEmpty()) {
+                p.setDataSet(null, 0L);
+            } else {
+                List<MediaFileDetail> temp
+                        = getMutantMediaFiles(centreId, genotypeId,
+                                strainId, parameterKey, pipelineId, procedureId);
+                ProcedureMetadataGroup mg = null;
+                if (genotypeId != 0 && includeBaseline != null && includeBaseline) {
+                    Iterator<ProcedureMetadataGroup> i = t.iterator();
+                    while (i.hasNext()) {
+                        mg = i.next();
+                        temp.addAll(getBaselineMediaFiles(centreId, strainId, parameterKey, mg, pipelineId, procedureId));
+                    }
+                }
+                List<MetadataGroupToValues> mgs = convertMetadataGroupsToIndices(temp);
+                p.setMetadataGroups(mgs);
+                p.setDataSet(temp);
             }
-            p.setDataSet(query.getResultList());
-            em.close();
         }
         return p;
     }

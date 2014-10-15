@@ -1371,14 +1371,17 @@
         return addImageTileLayer(image, obj);
     }
 
-    function getContextPath(context) {
-        var temp = context.cid + '/' +
-            context.gid + '/' +
-            context.sid + '/' +
-            context.pid + '/' +
-            context.qid;
+    function getQueryParam(context, includeBaseline) {
+        var temp = '?cid=' + context.cid +
+            '&gid=' + context.gid +
+            '&sid=' + context.sid +
+            '&qeid=' + context.qeid;
+        if (context.pid)
+            temp += '&pid=' + context.pid;
         if (context.lid)
-            temp += '?lid=' + context.lid;
+            temp += '&lid=' + context.lid;
+        if (includeBaseline)
+            temp += '&includeBaseline=true';
         return temp;
     }
 
@@ -1392,8 +1395,8 @@
             media.lid + '/' +
             media.gid + '/' +
             context.sid + '/' +
-            context.pid + '/' +
-            context.qid + '/' + media.id + '.' + media.e;
+            media.pid + '/' +
+            media.qid + '/' + media.id + '.' + media.e;
     }
 
     function getImageSelectionHandler(obj, image, roi) {
@@ -1822,6 +1825,12 @@
                 }
             }
         }
+        if (obj.specimenToSelect) {
+            obj.updateNotification(STR_NO_IMAGES, false);
+            if (obj.selectSpecimen(obj.specimenToSelect.aid,
+                obj.specimenToSelect.mid))
+                firstSpecimen = false;
+        }
         if (firstSpecimen) {
             obj.updateNotification(STR_NO_IMAGES, false);
             obj.selectSpecimen(firstSpecimen.aid, firstSpecimen.mid);
@@ -1965,6 +1974,7 @@
             var me = this, foundSpecimen = false,
                 key = '.thumbnail[aid="' + aid + '"]',
                 selection;
+            me.specimenToSelect = { 'aid': aid, 'mid': mid };
             if (mid !== undefined)
                 key += '[mid="' + mid + '"]';
             selection = me.specimenSelector.select(key);
@@ -2184,32 +2194,32 @@
                 me.refit();
             });
         },
-        view: function(cid, gid, sid, pid, qid, lid) {
+        view: function(cid, gid, sid, qeid, pid, lid) {
             var me = this, MESSAGE =
-                'The image viewer requires five parameters that identifies ' +
-                'the centre, genotype, strain, procedure and parameter. ' +
-                'Optionally, it also accepts a pipeline identifier. If the ' +
-                'pipeline is unspecified, images from all pipelines are shown.';
+                'The image viewer requires four parameters that identifies ' +
+                'the centre, genotype, strain and parameter. Optionally, it ' +
+                'also accepts a pipeline identifier and procedure identifier.' +
+                ' If the pipeline or procedure is unspecified, images from ' +
+                'all pipelines and procedures associated with the supplied ' +
+                'parameter are shown.';
             if (cid === undefined || cid === null)
                 me.fail(STR_ERROR, 'Invalid centre identifier', MESSAGE);
             else if (gid === undefined || gid === null)
                 me.fail(STR_ERROR, 'Invalid genotype identifier', MESSAGE);
             else if (sid === undefined || sid === null)
                 me.fail(STR_ERROR, 'Invalid strain identifier', MESSAGE);
-            else if (pid === undefined || pid === null)
-                me.fail(STR_ERROR, 'Invalid procedure identifier', MESSAGE);
-            else if (qid === undefined || qid === null)
-                me.fail(STR_ERROR, 'Invalid parameter identifier', MESSAGE);
+            else if (qeid === undefined || qeid === null)
+                me.fail(STR_ERROR, 'Invalid parameter key', MESSAGE);
             else {
                 me.context = {
                     cid: cid,
                     gid: gid,
                     sid: sid,
-                    pid: pid,
-                    qid: qid,
+                    qeid: qeid,
+                    pid: pid, /* optional */
                     lid: lid /* optional */
                 };
-                me.context.contextPath = getContextPath(me.context);
+                me.context.contextPath = getQueryParam(me.context, true);
                 me.render();
                 me.activateContext();
             }
@@ -2311,19 +2321,12 @@
             me.refit();
         },
         selectSpecimen: function(aid, mid) {
-            var me = this, foundSpecimen = false;
-            if (me.panel)
-                foundSpecimen = me.panel.viewer.selectSpecimen(aid, mid);
-            else {
-                if (!foundSpecimen)
-                    foundSpecimen =
-                        me.wildtypePanel.viewer.selectSpecimen(aid, mid);
-                if (!foundSpecimen)
-                    foundSpecimen =
-                        me.mutantPanel.viewer.selectSpecimen(aid, mid);
-            }
-            if (!foundSpecimen) {
-                alert('No images found for specimen with animal id ' + aid);
+            var me = this;
+            if (me.panel) /* single panel for combined */
+                me.panel.viewer.selectSpecimen(aid, mid);
+            else { /* split into two panels */
+                me.wildtypePanel.viewer.selectSpecimen(aid, mid);
+                me.mutantPanel.viewer.selectSpecimen(aid, mid);
             }
         },
         specimenSelectors: function(doShow) {

@@ -10,7 +10,7 @@
     phenoview or the QC tool. These are specified in index.jsp of these
     projects. Also, don't forget to release the web apps along with the
     image viewer. -->
-    <version>0.5</version>
+    <version>0.6.1</version>
     <packaging>war</packaging>
     <name>phenodcc-imaging-display</name>
     <url>http://www.mousephenotype.org</url>
@@ -67,12 +67,12 @@
         <dependency>
             <groupId>org.mousephenotype.dcc.entities</groupId>
             <artifactId>phenodcc-entities-impress</artifactId>
-            <version>4.1.1</version>
+            <version>4.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.mousephenotype.dcc.entities</groupId>
             <artifactId>phenodcc-entities-overviews</artifactId>
-            <version>1.4.6</version>
+            <version>1.6.2</version>
         </dependency>
         <dependency>
             <groupId>javax</groupId>

@@ -16,9 +16,9 @@
 package org.mousephenotype.dcc.media.entities;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.Date;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  *
@@ -27,15 +27,12 @@ import javax.xml.bind.annotation.XmlElement;
 public class MediaFileDetail implements Serializable {
 
     private Long id;
-    private Long measurementId;
-    private BigInteger animalId;
+    private Integer animalId;
     private String animalName;
     private Integer genotypeId;
     private Integer zygosity;
     private Integer sex;
     private Date startDate;
-    private String equipmentManufacturer;
-    private String equipmentModel;
     private final String checksum;
     private Integer isImage;
     private String extension;
@@ -44,24 +41,23 @@ public class MediaFileDetail implements Serializable {
     private final Short phase;
     private final Short status;
     private String metadataGroup;
+    private Long metadataGroupIndex;
     private Integer pipelineId;
+    private Integer procedureId;
+    private Integer parameterId;
 
-    public MediaFileDetail(Long id, Long measurementId, BigInteger animalId,
-            String animalName, Integer genotypeId, Integer zygosity,
-            Integer sex, Date startDate, String equipmentManufacturer,
-            String equipmentModel, String checksum, Integer isImage,
-            String extension, Integer width, Integer height, Short phase,
-            Short status, String metadataGroup, Integer pipelineId) {
+    public MediaFileDetail(Long id, Integer animalId, String animalName,
+            Integer genotypeId, Integer zygosity, Integer sex, Date startDate,
+            String checksum, Integer isImage, String extension, Integer width,
+            Integer height, Short phase, Short status, String metadataGroup,
+            Integer pipelineId, Integer procedureId, Integer parameterId) {
         this.id = id;
-        this.measurementId = measurementId;
         this.animalId = animalId;
         this.animalName = animalName;
         this.genotypeId = genotypeId;
         this.zygosity = zygosity;
         this.sex = sex;
         this.startDate = startDate;
-        this.equipmentManufacturer = equipmentManufacturer;
-        this.equipmentModel = equipmentModel;
         this.checksum = checksum;
         this.isImage = isImage;
         this.extension = extension;
@@ -71,6 +67,8 @@ public class MediaFileDetail implements Serializable {
         this.status = status;
         this.metadataGroup = metadataGroup;
         this.pipelineId = pipelineId;
+        this.procedureId = procedureId;
+        this.parameterId = parameterId;
     }
 
     @XmlElement(name = "id")
@@ -82,21 +80,12 @@ public class MediaFileDetail implements Serializable {
         this.id = id;
     }
 
-    @XmlElement(name = "mid")
-    public Long getMeasurementId() {
-        return measurementId;
-    }
-
-    public void setMeasurementId(Long measurementId) {
-        this.measurementId = measurementId;
-    }
-
     @XmlElement(name = "aid")
-    public BigInteger getAnimalId() {
+    public Integer getAnimalId() {
         return animalId;
     }
 
-    public void setAnimalId(BigInteger animalId) {
+    public void setAnimalId(Integer animalId) {
         this.animalId = animalId;
     }
 
@@ -143,24 +132,6 @@ public class MediaFileDetail implements Serializable {
 
     public void setStartDate(Date startDate) {
         this.startDate = startDate;
-    }
-
-    @XmlElement(name = "em")
-    public String getEquipmentManufacturer() {
-        return equipmentManufacturer;
-    }
-
-    public void setEquipmentManufacturer(String equipmentManufacturer) {
-        this.equipmentManufacturer = equipmentManufacturer;
-    }
-
-    @XmlElement(name = "en")
-    public String getEquipmentModel() {
-        return equipmentModel;
-    }
-
-    public void setEquipmentModel(String equipmentModel) {
-        this.equipmentModel = equipmentModel;
     }
 
     @XmlElement(name = "c")
@@ -214,13 +185,22 @@ public class MediaFileDetail implements Serializable {
         return status;
     }
 
-    @XmlElement(name = "m")
+    @XmlTransient
     public String getMetadataGroup() {
         return metadataGroup;
     }
 
     public void setMetadataGroup(String metadataGroup) {
         this.metadataGroup = metadataGroup;
+    }
+
+    @XmlElement(name = "m")
+    public Long getMetadataGroupIndex() {
+        return metadataGroupIndex;
+    }
+
+    public void setMetadataGroupIndex(Long metadataGroupIndex) {
+        this.metadataGroupIndex = metadataGroupIndex;
     }
 
     @XmlElement(name = "lid")
@@ -231,4 +211,23 @@ public class MediaFileDetail implements Serializable {
     public void setPipelineId(Integer pipelineId) {
         this.pipelineId = pipelineId;
     }
+
+    @XmlElement(name = "pid")
+    public Integer getProcedureId() {
+        return procedureId;
+    }
+
+    public void setProcedureId(Integer procedureId) {
+        this.procedureId = procedureId;
+    }
+
+    @XmlElement(name = "qid")
+    public Integer getParameterId() {
+        return parameterId;
+    }
+
+    public void setParameterId(Integer parameterId) {
+        this.parameterId = parameterId;
+    }
+
 }

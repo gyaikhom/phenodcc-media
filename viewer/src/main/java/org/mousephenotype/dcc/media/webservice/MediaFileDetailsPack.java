@@ -19,6 +19,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
+import org.mousephenotype.dcc.entities.overviews.MetadataGroupToValues;
 import org.mousephenotype.dcc.media.entities.MediaFileDetail;
 
 /**
@@ -28,6 +29,19 @@ import org.mousephenotype.dcc.media.entities.MediaFileDetail;
 @XmlSeeAlso(MediaFileDetail.class)
 @XmlType(propOrder = {"success", "total", "details"})
 public class MediaFileDetailsPack extends AbstractRestResponse<MediaFileDetail> {
+
+    private List<MetadataGroupToValues> metadataGroups;
+
+    public MediaFileDetailsPack() {
+    }
+
+    public List<MetadataGroupToValues> getMetadataGroups() {
+        return metadataGroups;
+    }
+
+    public void setMetadataGroups(List<MetadataGroupToValues> metadataGroups) {
+        this.metadataGroups = metadataGroups;
+    }
 
     @Override
     @XmlElement(name = "details")

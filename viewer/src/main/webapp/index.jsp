@@ -61,8 +61,8 @@ limitations under the License.
                     <%= request.getParameter("cid")%>,
                     <%= request.getParameter("gid")%>,
                     <%= request.getParameter("sid")%>,
+                    '<%= request.getParameter("qeid")%>',
                     <%= request.getParameter("pid")%>,
-                    <%= request.getParameter("qid")%>,
                     <%= request.getParameter("lid")%>);
             });
         </script>
