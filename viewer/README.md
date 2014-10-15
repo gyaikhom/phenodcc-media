@@ -114,7 +114,7 @@ side-by-side for the `<cid, gid, sid, pid, qid, lid>` data context.
                 alert('Will exit viewer');
             }
         });
-    comparative.view(cid, gid, sid, pid, qid, lid);
+    comparative.view(cid, gid, sid, pid, qeid, lid);
 
 
 In the above example, the data context is defined by the following
@@ -124,7 +124,7 @@ arguments to `view()`:
 * `gid` - Genotype identifier
 * `sid` - Background strain identifier
 * `pid` - Experimental procedure identifier
-* `qid` - Parameter to display for the experimental procedure
+* `qeid` - Parameter key to display for the experimental procedure
 * `lid` - Optional argument that specifies the experimental pipeline
   (identifies a selection of experimental procedures).
 

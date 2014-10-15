@@ -1,8 +1,14 @@
 ************************************
 PHENODCC IMAGE VIEWER
 Release Notes
-Last updated - 29 July 2014
+Last updated - 15 October 2014
 ************************************
+
+Release 0.6.1
+ * Allow selection of specimen even before selector is ready.
+ * Fixed stand-alone image viewer.
+ * Allow specification of only parameter key, where the parameter is associated to multiple procedures.
+ * Fixed web service for retrieving media files to correctly use meta-data groups.
 
 Release 0.5
  * Changed image server to prevent CORS error.
