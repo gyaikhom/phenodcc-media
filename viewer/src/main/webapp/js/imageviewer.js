@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* global d3 */
+
 /**
  * 
  * Written by: Gagarine Yaikhom (g.yaikhom@har.mrc.ac.uk)
@@ -48,7 +50,7 @@
         INCLUDE_ONLY_MUTANT = 0x2,
         INCLUDE_ONLY_WILDTYPE = 0x4,
         SPECIMEN_SELECTOR_HEIGHT = 220,
-        SPECIMEN_SELECTOR_WIDTH = 270,
+        SPECIMEN_SELECTOR_WIDTH = 300,
         STR_MUTANT = 'mutant',
         STR_WILDTYPE = 'wildtype',
         STR_IMAGE_PANEL = 'image-panel-',
@@ -65,7 +67,12 @@
         STR_WARNING = 'warning',
         STR_CONTROL_IS_ON = 'image-viewer-control-on',
         STR_LOADING = 'imageviewer-loading',
-        STR_NO_IMAGES = 'imageviewer-no-images'
+        STR_NO_IMAGES = 'imageviewer-no-images',
+        THUMBNAIL_LIST_PAGE_SIZE = 100,
+        
+        /* to handle small screen */
+        smallScreen = false,
+        SMALL_SCREEN_WIDTH = 1300
         ;
 
     /**
@@ -127,6 +134,36 @@
         if (value !== undefined)
             node.style(STR_TOP, value + 'px');
         return parseInt(node.style(STR_TOP), 10);
+    }
+
+    /**
+     * Returns the current right of the DOM node.
+     * 
+     * @param {Object} node DOM node.
+     * @param {Integer} value New right.
+     * @returns {Integer} width of the DOM node.
+     */
+    function dom_right(node, value) {
+        if (typeof node === 'string')
+            node = d3.select(node);
+        if (value !== undefined)
+            node.style(STR_RIGHT, value + 'px');
+        return parseInt(node.style(STR_RIGHT), 10);
+    }
+
+    /**
+     * Returns the current bottom of the DOM node.
+     * 
+     * @param {Object} node DOM node.
+     * @param {Integer} value New bottom.
+     * @returns {Integer} width of the DOM node.
+     */
+    function dom_bottom(node, value) {
+        if (typeof node === 'string')
+            node = d3.select(node);
+        if (value !== undefined)
+            node.style(STR_BOTTOM, value + 'px');
+        return parseInt(node.style(STR_BOTTOM), 10);
     }
 
     /**
@@ -197,6 +234,10 @@
             .text(text);
     }
 
+    function clear(node) {
+        node.selectAll('*').remove();
+    }
+
     /**
      * Appens a 'div' node with DOM identifier 'id' and class 'cls' as
      * a child under parent DOM node 'parent;.
@@ -239,11 +280,13 @@
      */
     function preventEventBubbling() {
         var event = d3.event;
-        if (event.preventDefault)
-            event.preventDefault();
-        if (event.stopPropagation)
-            event.stopPropagation();
-        event.cancelBubble = true;
+        if (event) {
+            if (event.preventDefault)
+                event.preventDefault();
+            if (event.stopPropagation)
+                event.stopPropagation();
+            event.cancelBubble = true;
+        }
         return false;
     }
 
@@ -305,6 +348,80 @@
         body.onselectstart = oldBodySelectStartHandler;
         if (oldBodyMouseUpHandler)
             oldBodyMouseUpHandler(d3.event);
+    };
+    
+    var ThumbnailPager = function(obj) {
+        this.parent = obj;
+        this.pageSize = THUMBNAIL_LIST_PAGE_SIZE;
+        this.currentPage = 0;
+        this.lastPage = 0;
+    };
+    
+    ThumbnailPager.prototype = {
+        countActive: function (list, doInclude) {
+            var i, c, k = 0;
+            for (i = 0, c = list.length; i < c; ++i) {
+                if (doInclude(list[i]))
+                    k++;
+            }
+            return k;
+        },
+        hideInactiveButtons: function () {
+            var me = this, parent = me.parent.thumbnailPagerContainer,
+                temp = me.currentPage === me.lastPage,
+                cls = 'disabled-pager-button';
+            parent.select('.list-last-page').classed(cls, temp);
+            parent.select('.list-next-page').classed(cls, temp);
+
+            temp = me.currentPage === 0;
+            parent.select('.list-first-page').classed(cls, temp);
+            parent.select('.list-previous-page').classed(cls, temp);
+        },
+        refit: function() {
+            
+        },
+        render: function (includeType) {
+            var me = this, parentObj = me.parent, centering,
+                container = parentObj.thumbnailPagerContainer,
+                filter = parentObj.doInclude, list = parentObj.parent.data;
+
+            clear(container);
+            if (filter === undefined) {
+                filter = function () {
+                    return true;
+                };
+            }
+            var numActiveRows = me.countActive(list, filter);
+            me.lastPage = Math.ceil(numActiveRows / me.pageSize) - 1;
+            centering = addDiv(container, null, 'list-pager-button-centering');
+            addDiv(centering, null, 'list-first-page', 'first').on('click', function () {
+                if (me.currentPage === 0)
+                    return;
+                me.currentPage = 0;
+                fillSpecimen(parentObj, includeType);
+            });
+            addDiv(centering, null, 'list-previous-page', 'previous').on('click', function () {
+                if (me.currentPage === 0)
+                    return;
+                --me.currentPage;
+                fillSpecimen(parentObj, includeType);
+            });
+            addDiv(centering, null, 'list-page-count', (me.currentPage + 1) +'/' + (me.lastPage + 1));
+            addDiv(centering, null, 'list-next-page', 'next').on('click', function () {
+                if (me.currentPage === me.lastPage)
+                    return;
+                ++me.currentPage;
+                fillSpecimen(parentObj, includeType);
+            });
+            addDiv(centering, null, 'list-last-page', 'last').on('click', function () {
+                if (me.currentPage === me.lastPage)
+                    return;
+                me.currentPage = me.lastPage;
+                fillSpecimen(parentObj, includeType);
+            });
+            me.hideInactiveButtons();
+            return numActiveRows;
+        }
     };
 
     /**
@@ -527,8 +644,8 @@
         getDragHandler: function(button) {
             var me = this;
             return function() {
+                preventEventBubbling();
                 if (mouseDown) {
-                    preventEventBubbling();
                     var newPosition = pageX(d3.event) + button.displacement,
                         oldValue, newValue;
                     /* keep slider button within range */
@@ -704,6 +821,7 @@
 
     function getZoomHandler(parent) {
         return function() {
+            preventEventBubbling();
             var scale = this.zoomSlider.getSliderValue(),
                 regionOfInterest = parent.regionOfInterest;
             if (regionOfInterest)
@@ -726,6 +844,7 @@
 
     function getBrightnessHandler(parent) {
         return function() {
+            preventEventBubbling();
             forceRenderingOfAllCanvases(parent.viewportContainer);
             parent.imageProcessingConfig.brightness =
                 this.brightnessSlider.getSliderValue();
@@ -741,6 +860,7 @@
 
     function getContrastHandler(parent) {
         return function() {
+            preventEventBubbling();
             forceRenderingOfAllCanvases(parent.viewportContainer);
             parent.imageProcessingConfig.contrast =
                 this.contrastSlider.getSliderValue();
@@ -756,6 +876,7 @@
 
     function getToggleColourInversion(parent) {
         return function() {
+            preventEventBubbling();
             parent.imageProcessingConfig.invert =
                 !parent.imageProcessingConfig.invert;
             forceRenderingOfAllCanvases(parent.viewportContainer);
@@ -771,6 +892,7 @@
 
     function getToggleChannel(parent, channel) {
         return function() {
+            preventEventBubbling();
             parent.imageProcessingConfig[channel] =
                 !parent.imageProcessingConfig[channel];
             forceRenderingOfAllCanvases(parent.viewportContainer);
@@ -819,24 +941,24 @@
 
             me.node = container.append('div')
                 .attr('id', 'view-control-' + parent.id)
-                .attr('class', 'view-control');
+                .attr('class', 'view-control unselectable');
 
             me.zoomSlider = new Slider(me.node,
                 'zoom-slider', 'Zoom:', 26, 420,
                 function() {
-                    throttle(zoomHandler, 0, me);
+                    throttle(zoomHandler, 10, me);
                 }, me.scales);
 
             me.brightnessSlider = new Slider(me.node,
                 'brightness-slider', 'Brightness:', 26, 420,
                 function() {
-                    throttle(brightnessHandler, 0, me);
+                    throttle(brightnessHandler, 10, me);
                 }, [-1.0, 1.0], 0.0);
 
             me.contrastSlider = new Slider(me.node,
                 'contrast-slider', 'Contrast:', 26, 420,
                 function() {
-                    throttle(contrastHandler, 0, me);
+                    throttle(contrastHandler, 10, me);
                 }, [0, 3.0], 1.0);
 
             me.events();
@@ -845,7 +967,7 @@
                 toggleColourInversion, false);
             me.redChannelCheckbox = addCheckbox(temp, 'Red',
                 toggleRedChannel, true);
-            me.greeenChannelCheckbox = addCheckbox(temp, 'Green',
+            me.greenChannelCheckbox = addCheckbox(temp, 'Green',
                 toggleGreenChannel, true);
             me.blueChannelCheckbox = addCheckbox(temp, 'Blue',
                 toggleBlueChannel, true);
@@ -910,7 +1032,24 @@
             me.containerWidth = dom_width(me.container);
             me.containerHeight = dom_height(me.container);
         },
-        bound: function(left, top) {
+        bound_right_bottom: function(right, bottom) {
+            var me = this,
+                minRight = me.containerWidth - me.controlWidth,
+                minBottom = me.containerHeight - me.controlHeight;
+            if (right > minRight)
+                right = minRight;
+            else if (right < 0)
+                right = 0;
+            if (bottom > minBottom)
+                bottom = minBottom;
+            else if (bottom < 0)
+                bottom = 0;
+            return {
+                'r': right,
+                'b': bottom
+            };
+        },
+        bound_left_top: function(left, top) {
             var me = this,
                 maxLeft = me.containerWidth - me.controlWidth,
                 maxTop = me.containerHeight - me.controlHeight;
@@ -944,9 +1083,9 @@
                 if (isDragging) {
                     var coord = d3.mouse(this.parentNode),
                         dx = dragX - coord[0], dy = dragY - coord[1],
-                        leftTop = me.bound(dom_left(node) - dx, dom_top(node) - dy);
-                    dom_left(node, leftTop.l);
-                    dom_top(node, leftTop.t);
+                        rightBottom = me.bound_right_bottom(dom_right(node) + dx, dom_bottom(node) + dy);
+                    dom_right(node, rightBottom.r);
+                    dom_bottom(node, rightBottom.b);
                     dragX = coord[0];
                     dragY = coord[1];
                 }
@@ -1402,6 +1541,7 @@
     function getImageSelectionHandler(obj, image, roi) {
         var viewport = obj.viewport;
         return function() {
+            preventEventBubbling();
             var node = d3.select(this), parent = d3.select(this.parentNode);
             parent.selectAll('.active').classed('active', false);
             node.classed('active', true);
@@ -1413,6 +1553,15 @@
             obj.regionOfInterest = roi;
             if (obj.download)
                 obj.download.attr('href', getMediaUrl(image, obj.context));
+            if (image.l) {
+                obj.external.attr('href', image.l).style('display', 'block');
+            } else {
+                obj.external.style('display', 'none');
+            }
+            obj.mediaTitle = getMediaTitle(image);
+            obj.mediaShortTitle = getMediaTitle(image, true);
+            if (obj.specimenTitle)
+                obj.specimenTitle.html(smallScreen ? obj.mediaShortTitle : obj.mediaTitle);
             this.scrollIntoView(true);
         };
     }
@@ -1427,13 +1576,15 @@
 
     function getMediaSelectionHandler(obj, media) {
         return function() {
+            preventEventBubbling();
             var node = d3.select(this),
                 parent = d3.select(this.parentNode),
                 url = getMediaUrl(media, obj.context);
             parent.selectAll('.active').classed('active', false);
             node.classed('active', true);
+            if (obj.specimenTitle)
+                obj.specimenTitle.html(getMediaTitle(media));
             this.scrollIntoView(true);
-
             if (media.e === 'pdf')
                 replacePdfIframe(obj.viewportContainer, url);
         };
@@ -1632,12 +1783,35 @@
 
     function getMediaDetails(media) {
         var c = "<table><tbody>";
+        if (media.l)
+            c += '<tr><td colspan="2" class="external-link"><a target="_blank" href="' +
+                media.l + '">View full size on external viewer</a></td>';
         c += '<tr><td>Name:</td><td>' + media.an + '</td></tr>';
-        c += '<tr><td>Date:</td><td>' + dateFormatter(new Date(media.d)) + '</td></tr>';
         c += '<tr><td>Sex:</td><td>' + prepareSex(media.g)
             + (media.gid === 0 ? ' (wildtype)' : ' (mutant)') + '</td></tr>';
         c += '<tr><td>Zygosity:</td><td>' + prepareZygosity(media.z) + '</td></tr>';
+        c += '<tr><td>Assoc. param.:</td><td>' + (media.n === undefined ? 'unknown' : media.n) + '</td></tr>';
+        c += '<tr><td>Assoc. key:</td><td>' + (media.k === undefined ? 'unknown' : media.k) + '</td></tr>';
+        c += '<tr><td>Exp. date:</td><td>' + dateFormatter(new Date(media.d)) + '</td></tr>';
         return c + '</tbody></table>';
+    }
+
+    function getMediaTitle(media, shortTitle) {
+        var c = "";
+        if (media === undefined)
+            return c;
+        c += '<span>' + media.an + '</span>';
+        if (!shortTitle) {
+            c += '<span>' + prepareSex(media.g) + '</span>';
+            c += '<span>' + prepareZygosity(media.z) + '</span>';
+            c += '<span>' + dateFormatter(new Date(media.d)) + '</span>';
+        }
+        if (media.n === undefined || media.k === undefined) {
+            c += '<span class="no-assoc-param">No associated parameter</span>';
+        } else {
+            c += '<span class="assoc-param">' + media.n + ' (' + media.k + ')</span>';
+        }
+        return c;
     }
 
     function addImageThumbnail(selector, thumbnail, media, obj) {
@@ -1800,32 +1974,80 @@
     }
 
     function fillSpecimen(obj, includeType) {
-        var data = obj.data, i, j, c = data.length, datum, firstSpecimen;
+        var data = obj.data, i, j, c = data.length, datum, firstSpecimen,
+                countWT = 0, countM = 0, doInclude, numThumbnailsToInclude = 0,
+                pageSize = obj.thumbnailPager.pageSize,
+                start = obj.thumbnailPager.currentPage * pageSize,
+                end = start + pageSize;
+        clear(obj.specimenSelector);
+        doInclude = obj.doInclude = function(datum) {
+            var matchParameterKey = obj.parent.filter, select = true;
+            if ((includeType & INCLUDE_ONLY_WILDTYPE) && datum.gid !== 0)
+                select = false;
+            else if ((includeType & INCLUDE_ONLY_MUTANT) && datum.gid === 0)
+                select = false;
+            return select && (matchParameterKey === undefined
+                        || datum.k === matchParameterKey);
+        };
+
         if (includeType & INCLUDE_BOTH) {
-            for (i = 0; i < c; ++i)
-                addThumbnail(obj, data[i], i);
-            firstSpecimen = data[0];
+            for (i = 0; i < c; ++i) {
+                datum = data[i];
+                if (doInclude(datum)) {
+                    if (++numThumbnailsToInclude <= start)
+                        continue;
+                    if (firstSpecimen === undefined)
+                        firstSpecimen = datum;
+                    addThumbnail(obj, datum, i);
+                    if (datum.gid !== 0)
+                        ++countM;
+                    else
+                        ++countWT;
+                    if (numThumbnailsToInclude === end)
+                        break;
+                }
+            }
         } else if (includeType & INCLUDE_ONLY_WILDTYPE) {
             for (i = 0, j = 0; i < c; ++i) {
                 datum = data[i];
-                if (datum.gid === 0) {
-                    if (firstSpecimen === undefined)
-                        firstSpecimen = data[i];
-                    addThumbnail(obj, datum, j++);
+                if (doInclude(datum)) {
+                    if (datum.gid === 0) {
+                        if (++numThumbnailsToInclude <= start)
+                            continue;
+                        if (firstSpecimen === undefined)
+                            firstSpecimen = datum;
+                        addThumbnail(obj, datum, j++);
+                        if (datum.gid !== 0)
+                            ++countM;
+                        else
+                            ++countWT;
+                        if (numThumbnailsToInclude === end)
+                            break;
+                    }
                 }
             }
             obj.selectSpecimen(data[0].aid, data[0].mid);
         } else if (includeType & INCLUDE_ONLY_MUTANT) {
             for (i = 0, j = 0; i < c; ++i) {
                 datum = data[i];
-                if (datum.gid !== 0) {
-                    if (firstSpecimen === undefined)
-                        firstSpecimen = data[i];
-                    addThumbnail(obj, datum, j++);
+                if (doInclude(datum)) {
+                    if (datum.gid !== 0) {
+                        if (++numThumbnailsToInclude <= start)
+                            continue;
+                        if (firstSpecimen === undefined)
+                            firstSpecimen = datum;
+                        addThumbnail(obj, datum, j++);
+                        if (datum.gid !== 0)
+                            ++countM;
+                        else
+                            ++countWT;
+                        if (numThumbnailsToInclude === end)
+                            break;
+                    }
                 }
             }
         }
-        if (obj.specimenToSelect) {
+        if ((countWT + countM) > 0 && obj.specimenToSelect) {
             obj.updateNotification(STR_NO_IMAGES, false);
             if (obj.selectSpecimen(obj.specimenToSelect.aid,
                 obj.specimenToSelect.mid))
@@ -1835,6 +2057,7 @@
             obj.updateNotification(STR_NO_IMAGES, false);
             obj.selectSpecimen(firstSpecimen.aid, firstSpecimen.mid);
         }
+        obj.thumbnailPager.render(includeType);
     }
 
     function createViewerInterface(obj) {
@@ -1866,17 +2089,30 @@
                 obj.specimenSelector = container.append('div')
                     .attr('class', STR_SPECIMEN_SELECTOR + STR_BOTTOM);
         }
+        obj.thumbnailPagerContainer = container.append('div')
+            .attr('class', 'list-pager-container unselectable');
         obj.viewport = new Viewport(obj);
         obj.viewControl = new ViewControl(obj);
-        if (obj.title)
-            obj.viewportContainer.append('div')
-                .attr('class', STR_IMAGE_PANEL + 'title')
-                .text(obj.title);
-
-        obj.download = obj.viewportContainer.append('a')
+        obj.titleBar = obj.viewportContainer
+                .append('div').attr('class', STR_IMAGE_PANEL + 'title-bar');
+        obj.download = obj.titleBar.append('a')
             .attr('target', '_blank')
             .attr('class', STR_IMAGE_PANEL + 'download')
             .attr('title', 'Download original media file');
+        obj.external = obj.titleBar.append('a')
+            .attr('target', '_blank')
+            .attr('class', STR_IMAGE_PANEL + 'external')
+            .attr('title', 'Visit external viewer')
+            .style('display', 'none');
+
+        if (obj.title)
+            obj.titleBar.append('div')
+                .attr('class', STR_IMAGE_PANEL + 'specimen-type')
+                .text(obj.title);
+
+        obj.specimenTitle = obj.titleBar.append('div')
+                .attr('class', STR_IMAGE_PANEL + 'specimen-title');
+
 
         obj.specimenSelector.node().onscroll = function() {
             var node = d3.select(this), container = this;
@@ -1887,6 +2123,7 @@
                         img.attr('src', img.attr('src-hold'));
                 });
         };
+        obj.thumbnailPager = new ThumbnailPager(obj);
     }
 
     function refitViewerInterface(obj) {
@@ -1900,8 +2137,9 @@
             case STR_RIGHT:
                 temp = dom_height(obj.container) - temp;
                 dom_height(viewportContainer, temp);
-                dom_height(specimenSelector, temp);
+                dom_height(specimenSelector, temp - dom_height(obj.thumbnailPagerContainer));
                 dom_width(specimenSelector, SPECIMEN_SELECTOR_WIDTH);
+                dom_width(obj.thumbnailPagerContainer, SPECIMEN_SELECTOR_WIDTH);
                 dom_width(viewportContainer,
                     dom_width(obj.container) - dom_width(obj.specimenSelector));
                 break;
@@ -1911,15 +2149,19 @@
                 temp = dom_width(obj.container) - temp;
                 dom_width(viewportContainer, temp);
                 dom_width(specimenSelector, temp);
+                dom_width(obj.thumbnailPagerContainer, temp);
                 dom_height(specimenSelector, SPECIMEN_SELECTOR_HEIGHT);
                 dom_height(viewportContainer,
-                    dom_height(obj.container) - dom_height(obj.specimenSelector));
+                    dom_height(obj.container)
+                    - dom_height(obj.specimenSelector)
+                    - dom_height(obj.thumbnailPagerContainer));
         }
         obj.viewControl.refit();
         obj.specimenSelector.node().onscroll();
         if (obj.regionOfInterest)
             obj.regionOfInterest.resize();
         obj.viewport.refit();
+        obj.thumbnailPager.refit();
     }
 
     dcc.ImageViewer = function(container, selectorOrientation, obj) {
@@ -1951,6 +2193,7 @@
         },
         refit: function() {
             var me = this;
+            me.specimenTitle.html(smallScreen ? me.mediaShortTitle : me.mediaTitle);
             refitViewerInterface(me);
         },
         update: function(context, includeType, data) {
@@ -2038,9 +2281,10 @@
                     .on('click', parent.exitHandler);
             }
 
+            detectSmallScreenSize(container);
             toolbar.append('div')
                 .attr('class', 'image-viewer-title')
-                .html(parent.title);
+                .html(smallScreen ? parent.shortTitle : parent.title);
 
             toolbar.append('div')
                 .attr('class', 'viewer-controls')
@@ -2133,32 +2377,37 @@
         this.id = id;
         if (config) {
             this.title = config.title;
+            this.shortTitle = config.shortTitle;
             this.splitType = config.splitType;
             this.container = d3.select('#' + id);
             this.exitHandler = config.exitHandler;
             this.externalToolbar = config.toolbar;
+            this.filter = config.filter;
             if (config.host !== undefined)
                 IMAGE_VIEWER_HOST = config.host;
         }
-        this.clear();
+        clear(this.container);
     };
+
+    function detectSmallScreenSize(container) {
+        smallScreen = dom_width(container) < SMALL_SCREEN_WIDTH;
+    }
 
     dcc.ComparativeImageViewer.prototype = {
         clear: function() {
             var me = this;
-            me.container.selectAll('*').remove();
+            clear(me.container);
         },
         fail: function(type, title, message) {
             var me = this, node;
-            me.clear();
+            clear(me.container);
             node = me.container.append('div').attr('class', type + '-message');
             node.append('div').html(title);
             node.append('div').html(message);
         },
         render: function() {
-            var me = this, container = me.container, content, id = '-' + me.id;
-
-            me.clear();
+            var me = this, container = me.container, id = '-' + me.id;
+            clear(me.container);
             me.toolbar = new ViewerToolbar(me);
             me.content = container.append('div').attr('class', 'viewer-panels');
             dom_height(me.content, dom_height(container) - dom_height(me.toolbar.node));
@@ -2191,6 +2440,9 @@
                         STR_LEFT);
             }
             d3.select(window).on('resize', function() {
+                detectSmallScreenSize(me.container);
+                me.toolbar.node.select('.image-viewer-title')
+                    .html(smallScreen ? me.shortTitle : me.title);
                 me.refit();
             });
         },
@@ -2332,6 +2584,8 @@
         specimenSelectors: function(doShow) {
             var me = this;
             me.container.selectAll('[class*="specimen-selector-"]')
+                .style('display', doShow ? 'block' : 'none');
+            me.container.selectAll('.list-pager-container')
                 .style('display', doShow ? 'block' : 'none');
             me.refit();
         },

@@ -3,6 +3,7 @@
   <persistence-unit name="org.mousephenotype.dcc.media.entities.pu" transaction-type="RESOURCE_LOCAL">
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
     <!-- we need entities in the IMPReSS entities packages -->
+    <class>org.mousephenotype.dcc.entities.impress.IgnoreProcedures</class>
     <class>org.mousephenotype.dcc.entities.impress.ParamIncrement</class>
     <class>org.mousephenotype.dcc.entities.impress.ParamMpterm</class>
     <class>org.mousephenotype.dcc.entities.impress.ParamOption</class>
@@ -15,7 +16,7 @@
     <class>org.mousephenotype.dcc.entities.impress.ProcedureType</class>
     <class>org.mousephenotype.dcc.entities.impress.ProcedureWeek</class>
     <class>org.mousephenotype.dcc.entities.impress.Units</class>
-    <!-- we need entities in the Import Library Overview entities packages -->
+    <!-- we need entities in the phenodcc_overview entities packages -->
     <class>org.mousephenotype.dcc.entities.overviews.Genotype</class>
     <class>org.mousephenotype.dcc.entities.overviews.ACentre</class>
     <class>org.mousephenotype.dcc.entities.overviews.Strain</class>
@@ -24,11 +25,17 @@
     <class>org.mousephenotype.dcc.entities.overviews.MetadataGroupToValues</class>
     <class>org.mousephenotype.dcc.entities.overviews.ProceduresPerformed</class>
     <class>org.mousephenotype.dcc.entities.overviews.ProcedureAnimalOverview</class>
+    <!-- we need entities in phenodcc_raw entities packages -->
+    <class>org.mousephenotype.dcc.media.entities.Seriesmediaparameter</class>
+    <class>org.mousephenotype.dcc.media.entities.Seriesmediaparametervalue</class>
+    <class>org.mousephenotype.dcc.media.entities.AProcedure</class>
+
     <!-- project entities -->
     <class>org.mousephenotype.dcc.media.entities.MediaFile</class>
     <class>org.mousephenotype.dcc.media.entities.Phase</class>
     <class>org.mousephenotype.dcc.media.entities.AStatus</class>
     <class>org.mousephenotype.dcc.media.entities.FileExtension</class>
+    <class>org.mousephenotype.dcc.media.entities.Association</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="${db.url}"/>
       <property name="javax.persistence.jdbc.driver" value="${db.driver}"/>

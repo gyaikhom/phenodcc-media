@@ -45,12 +45,18 @@ public class MediaFileDetail implements Serializable {
     private Integer pipelineId;
     private Integer procedureId;
     private Integer parameterId;
+    private Long measurementId;
+    private String associatedParameterKey;
+    private String associatedParameterName;
+    private String link;
 
     public MediaFileDetail(Long id, Integer animalId, String animalName,
             Integer genotypeId, Integer zygosity, Integer sex, Date startDate,
             String checksum, Integer isImage, String extension, Integer width,
             Integer height, Short phase, Short status, String metadataGroup,
-            Integer pipelineId, Integer procedureId, Integer parameterId) {
+            Integer pipelineId, Integer procedureId, Integer parameterId,
+            Long measurementId, String associatedParameterKey,
+            String associatedParameterName, String link) {
         this.id = id;
         this.animalId = animalId;
         this.animalName = animalName;
@@ -69,6 +75,10 @@ public class MediaFileDetail implements Serializable {
         this.pipelineId = pipelineId;
         this.procedureId = procedureId;
         this.parameterId = parameterId;
+        this.measurementId = measurementId;
+        this.associatedParameterKey = associatedParameterKey;
+        this.associatedParameterName = associatedParameterName;
+        this.link = link;
     }
 
     @XmlElement(name = "id")
@@ -156,7 +166,7 @@ public class MediaFileDetail implements Serializable {
     public void setExtension(String extension) {
         this.extension = extension;
     }
-    
+
     @XmlElement(name = "w")
     public Integer getWidth() {
         return width;
@@ -228,6 +238,42 @@ public class MediaFileDetail implements Serializable {
 
     public void setParameterId(Integer parameterId) {
         this.parameterId = parameterId;
+    }
+
+    @XmlElement(name = "mid")
+    public Long getMeasurementId() {
+        return measurementId;
+    }
+
+    public void setMeasurementId(Long measurementId) {
+        this.measurementId = measurementId;
+    }
+
+    @XmlElement(name = "k")
+    public String getAssociatedParameterKey() {
+        return associatedParameterKey;
+    }
+
+    public void setAssociatedParameterKey(String associatedParameterKey) {
+        this.associatedParameterKey = associatedParameterKey;
+    }
+
+    @XmlElement(name = "n")
+    public String getAssociatedParameterName() {
+        return associatedParameterName;
+    }
+
+    public void setAssociatedParameterName(String associatedParameterName) {
+        this.associatedParameterName = associatedParameterName;
+    }
+
+    @XmlElement(name = "l")
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 
 }

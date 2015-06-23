@@ -55,12 +55,14 @@ case $2 in
         ;;
     live) type=5
         ;;
-    dev) type=6
+    live_110) type=6
+        ;;
+    dev) type=7
         ;;
     *)
         echo "Please specify the build target."
         echo ""
-        echo "    USAGE: package.sh source_dir [localhost | prince | sandbox | beta | live | dev]"
+        echo "    USAGE: package.sh source_dir [localhost | prince | sandbox | beta | live | live_110 | dev]"
         exit
         ;;
 esac
