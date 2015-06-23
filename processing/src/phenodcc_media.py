@@ -33,10 +33,31 @@ import sys
 from subprocess import call
 from PIL import Image
 import fcntl
+import time
+from datetime import datetime
 
-VERSION = '1.0.0'
+VERSION = '0.7.3'
+HASH_BLOCK_SIZE = 65536
+MAX_DOWNLOAD_RETRIES = 3
+SLEEP_SECS_BEFORE_RETRY = 20  # 20 seconds
 
 verbose = False
+
+# sys.stdout.flush() is used everywhere there is a print
+# There doesn't seem to be a standard approach for doing this.
+#
+# 1) python -u
+# 2) Opening the stdout as flushing
+# 3) Using flush = true in print (available only on 3.3)
+# 4) Setting env, etc.
+#
+# Can't be bothered... Using the C way of doing things
+
+LOG_ERROR = '''
+insert into phenodcc_media.error_logs
+(media_id, phase_id, error_msg, created)
+values (%s, %s, %s, now())
+'''
 
 GET_MEDIA_FILES = '''
 select mp.centre_id as cid,
@@ -61,13 +82,25 @@ where
     and q.parameter_key = mp.parameter_id
     and length(substring_index(mp.value, '.', -1)) < 8
 order by cid, lid, gid, sid, pid, qid, mid
-limit 15
 '''
 
 ADD_FILE_TO_DOWNLOAD = '''
 insert into phenodcc_media.media_file
 (cid, lid, gid, sid, pid, qid, mid, url, extension_id, is_image, phase_id, status_id, created)
 values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+'''
+
+# Note that many resubmissions might be happening, which should all point to
+# the first successful download. This is why we order them in ascending order by
+# the id (because lower ids are the oldest entries) and limit result by one.
+# We are only interested in successful downloads (i.e., phase > download)
+CHECK_IF_URL_ALREADY_DOWNLOADED = '''
+select f.id, f.cid, f.lid, f.gid, f.sid, f.pid, f.qid, e.extension
+from phenodcc_media.media_file as f
+    left join phenodcc_media.file_extension e on (f.extension_id = e.id)
+where f.phase_id > 1 and f.url = %s
+order by id asc
+limit 1
 '''
 
 CHECK_IF_FILE_ALREADY_EXISTS = '''
@@ -134,13 +167,22 @@ from
 where p.short_name = "tile" and s.short_name = "running"
 '''
 
+GET_TILING_DONE = '''
+select f.id, f.cid, f.lid, f.gid, f.sid, f.pid, f.qid, e.extension, f.checksum
+from
+    phenodcc_media.media_file f
+    left join phenodcc_media.phase p on (f.phase_id = p.id)
+    left join phenodcc_media.a_status s on (f.status_id = s.id)
+    left join phenodcc_media.file_extension e on (f.extension_id = e.id)
+where p.short_name = "tile" and s.short_name = "done"
+order by f.cid, f.lid, f.gid, f.sid, f.pid, f.qid, f.mid
+'''
+
 GET_PHASE_ID = "select id from phenodcc_media.phase where short_name = %s limit 1"
 GET_STATUS_ID = "select id from phenodcc_media.a_status where short_name = %s limit 1"
 UPDATE_PHASE_STATUS = "update phenodcc_media.media_file set phase_id = %s, status_id = %s where id = %s"
 UPDATE_CHECKSUM = "update phenodcc_media.media_file set checksum = %s where id = %s"
 UPDATE_IMAGE_SIZE = "update phenodcc_media.media_file set width = %s, height = %s where id = %s"
-
-HASH_BLOCK_SIZE = 65536
 
 # get phases used
 DOWNLOAD_PHASE = -1
@@ -175,6 +217,12 @@ def create_media_storage_path(centre_id, pipeline_id, genotype_id, strain_id, pr
     if not os.path.exists(path):
         os.makedirs(path)
     return path
+
+
+def log_error(connection, media_id, phase_id, error_msg):
+    modify = connection.cursor()
+    modify.execute(LOG_ERROR, (media_id, phase_id, error_msg))
+    connection.commit()
 
 
 # Get the consistent unique identifiers for the phases and statuses
@@ -243,17 +291,26 @@ def get_file_type(con, url):
     extension_id = 0
     is_image = 0
     matches = re.search(r'.*\.([^.]+)$', url)
+
     if matches:
         extension = matches.group(1).lower()
+        print 'match:', url, extension
+        sys.stdout.flush()
+
         if re.match(r'^(bmp|dcm|jpeg|jpg|png|tif|tiff)$', extension):
             is_image = 1
         cur = con.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(CHECK_IF_EXTENSION_EXISTS, extension)
         if cur.rowcount == 0:
             cur.execute(ADD_FILE_EXTENSION, extension)
+            con.commit()
             extension_id = con.insert_id()
         else:
             extension_id = cur.fetchone()['id']
+    else:
+        print 'no match:', url
+        sys.stdout.flush()
+
     return extension_id, is_image
 
 
@@ -272,6 +329,7 @@ def add_files_to_download():
 
         if verbose and tracker_cur.rowcount > 0:
             print tracker_cur.rowcount, 'media files found...'
+            sys.stdout.flush()
 
         to_download = 0
         already_downloaded = 0
@@ -301,15 +359,18 @@ def add_files_to_download():
                     centre_id, pipeline_id, genotype_id, strain_id, procedure_id, parameter_id, measurement_id,
                     url_to_download, extension_id, is_image, DOWNLOAD_PHASE, PENDING_STATUS
                 ))
+                media_connection.commit()
                 to_download += 1
                 if verbose:
                     print '    Url', url_to_download, 'has been added for download and processing...'
+                    sys.stdout.flush()
             else:
                 already_downloaded += 1
 
         if verbose:
             print '    ', already_downloaded, 'media files already downloaded...'
             print '    ', to_download, 'new media files added to download queue...'
+            sys.stdout.flush()
 
 
 # Get credentials to access the file servers from where to download the images.
@@ -319,56 +380,121 @@ def get_credential(centre_id):
         cur = con.cursor(MySQLdb.cursors.DictCursor)
         cur.execute(GET_CREDENTIAL, centre_id)
         record = cur.fetchone()
+    if record['accesskey'] == '':
+        record['accesskey'] = None
     return record
 
 
 # Download the file from the supplied URL and save it to destination file.
-def download_file(url, save_as):
+def download_file(url, save_as, max_attempts):
     if verbose:
-        print "    Downloading", url, "and saving as file", save_as
-    try:
-        with closing(urllib2.urlopen(url)) as r:
-            with open(save_as, 'wb') as f:
-                shutil.copyfileobj(r, f)
-    except urllib2.URLError:
-        return False
-    return True
+        print "Downloading", url, "and saving as file", save_as
+        sys.stdout.flush()
+    num_retries = 1
+    while num_retries <= max_attempts:
+        if verbose:
+            print "    Attempt", num_retries,
+            sys.stdout.flush()
+        try:
+            with closing(urllib2.urlopen(url)) as r:
+                with open(save_as, 'wb') as f:
+                    shutil.copyfileobj(r, f)
+            if verbose:
+                print " [ SUCCESS ]"
+                sys.stdout.flush()
+            return
+        except (urllib2.URLError, IOError) as e:
+            if verbose:
+                print "[ FAIL ]"
+                print "        ERROR: download_file -", e
+                sys.stdout.flush()
+            num_retries += 1
+            if num_retries > max_attempts:
+                if verbose:
+                    print "    [ Giving up the download, maximum retries reached ]"
+                    sys.stdout.flush()
+                raise e
+            else:
+                if verbose:
+                    print "    [ Sleeping for", SLEEP_SECS_BEFORE_RETRY / 60, "minutes before re-attempt ]"
+                    sys.stdout.flush()
+                time.sleep(SLEEP_SECS_BEFORE_RETRY)
 
 
 # Download file from a FTP server using the supplied credentials.
 def get_ftp_file(url, save_as, cred):
-    # First try using username and password authentication.
-    loc = "ftp://" + cred["username"] + ":" + cred["accesskey"] + "@" + url.netloc + url.path
-    return_value = download_file(loc, save_as)
-
-    # If the above fails, try using anonymous user.
-    if return_value == 0:
-        loc = "ftp://" + url.netloc + url.path
-        return_value = download_file(loc, save_as)
-    return return_value
+    try:
+        loc = "ftp://"
+        # temporary hack to proceed with anonymous download if processing Jax
+        if cred["username"] != 'jlkexternal':
+            loc = loc + cred["username"] + ":" + cred["accesskey"] + "@"
+        loc = loc + url.netloc + url.path
+        download_file(loc, save_as, MAX_DOWNLOAD_RETRIES)
+    except (urllib2.URLError, IOError) as e:
+        if verbose:
+            print "  ! Download with username/password failed:", e.strerror
+            print "    [ Will attempt anonymous download ]"
+            sys.stdout.flush()
+        try:
+            loc = "ftp://" + url.netloc + url.path
+            download_file(loc, save_as, 1)  # To prevent incorrect login IP band, try only once
+        except (urllib2.URLError, IOError):
+            raise e  # We wish to record the first exception (as that is the expected one)
 
 
 # Download file from a sFTP server using the supplied credentials.
 def get_sftp_file(url, save_as, cred):
-    transport = paramiko.Transport((url.netloc, 22))
-    transport.connect(username=cred["username"], password=cred["accesskey"])
-    sftp = paramiko.SFTPClient.from_transport(transport)
-    sftp.get(url.path, save_as)
-    sftp.close()
-    transport.close()
-    return True
+    if verbose:
+        print "Downloading", url, "and saving as file", save_as
+        sys.stdout.flush()
+    num_retries = 1
+    while num_retries <= MAX_DOWNLOAD_RETRIES:
+        if verbose:
+            print "    Attempt", num_retries,
+            sys.stdout.flush()
+        try:
+            pkey = paramiko.RSAKey.from_private_key_file('/home/dcccrawler/.ssh/id_rsa')
+            transport = paramiko.Transport((url.netloc.split(':')[0], 22))
+            transport.connect(username=cred["username"], password=cred["accesskey"], pkey=pkey)
+            sftp = paramiko.SFTPClient.from_transport(transport)
+            sftp.get(url.path, save_as)
+            sftp.close()
+            transport.close()
+            if verbose:
+                print "[ SUCCESS ]"
+                sys.stdout.flush()
+            return
+        except (IOError, paramiko.PasswordRequiredException, paramiko.SSHException) as e:
+            if verbose:
+                print "[ FAIL ]"
+                print "        ERROR: get_sftp_file -", e
+                sys.stdout.flush()
+            num_retries += 1
+            if num_retries > MAX_DOWNLOAD_RETRIES:
+                if verbose:
+                    print "    [ Giving up the download, maximum retries reached ]"
+                    sys.stdout.flush()
+                raise e
+            else:
+                if verbose:
+                    print "    [ Sleeping for", SLEEP_SECS_BEFORE_RETRY / 60, "minutes before re-attempt ]"
+                    sys.stdout.flush()
+                time.sleep(SLEEP_SECS_BEFORE_RETRY)
 
 
 # Download file from the file server using the supplied credential.
-def get_file(url, save_as, cred):
+def get_file(url_to_download, save_as, cred):
+    # make the supplied url safe for download
+    url = urlparse(urllib2.quote(url_to_download, safe="%/:=&?~#+!$,;'@()*[]"))
+
     if url.scheme == "http" or url.scheme == "https":
-        return download_file(url.geturl(), save_as)
+        download_file(url.geturl(), save_as, MAX_DOWNLOAD_RETRIES)
     elif url.scheme == "ftp":
-        return get_ftp_file(url, save_as, cred)
+        get_ftp_file(url, save_as, cred)
     elif url.scheme == "sftp":
-        return get_sftp_file(url, save_as, cred)
+        get_sftp_file(url, save_as, cred)
     else:
-        return False
+        raise urllib2.URLError("Unsupported internet transport protocol: " + url.scheme)
 
 
 # Calculate the SHA1 checksum of the file that was successfully downloaded.
@@ -381,7 +507,10 @@ def get_sha1(file_path):
             while len(buf) > 0:
                 has_generator.update(buf)
                 buf = f.read(HASH_BLOCK_SIZE)
-    except IOError:
+    except IOError as e:
+        if verbose:
+            print "get_sha1 -", e
+            sys.stdout.flush()
         return None
     return has_generator.hexdigest()
 
@@ -401,6 +530,46 @@ def set_checksum(connection, media_id, file_saved_as):
     return sha1
 
 
+# First check if the URL was already downloaded successfully. This happens when 
+# centres resubmit the same URLs, and because new measurement ids are assigned,
+# the same URL is marked as a new media file. Since downloading files is
+# really expensive in terms of bandwidth and storage space, we try to optimise this
+# by instead creating a symbolic link to the existing file.
+def check_and_download(connection, url_to_download, file_save_as, credentials):
+    cur = connection.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute(CHECK_IF_URL_ALREADY_DOWNLOADED, url_to_download)
+
+    if cur.rowcount == 0:
+        get_file(url_to_download, file_save_as, credentials)
+    else:
+        record = cur.fetchone()
+        media_id = record['id']
+        centre_id = record['cid']
+        pipeline_id = record['lid']
+        genotype_id = record['gid']
+        strain_id = record['sid']
+        procedure_id = record['pid']
+        parameter_id = record['qid']
+        file_extension = record['extension']
+
+        existing_file = get_original_media_path(centre_id, pipeline_id,
+                                                genotype_id, strain_id,
+                                                procedure_id, parameter_id,
+                                                media_id, file_extension)
+        try:
+            # Create relative symlink
+            src_split = os.path.split(file_save_as)
+            os.symlink(os.path.relpath(existing_file, src_split[0]), file_save_as)
+        except OSError:
+            # If we cannot create a symlink, probably the file is no longer
+            # there. So, just re-download it again.
+            if verbose:
+                print "    Failed to create symbolic link to:", existing_file
+                print "    [ Will download as a new file ]"
+                sys.stdout.flush()
+            get_file(url_to_download, file_save_as, credentials)
+
+
 # Download file that has not been downloaded and update download status.
 # connection - Connection to use for accessing the database
 # media_id - Primary key of the record associated with the file
@@ -408,24 +577,26 @@ def set_checksum(connection, media_id, file_saved_as):
 # url_to_download - URL to download
 # file_save_as - Where to save the file once downloaded
 def retrieve_file(connection, media_id, credentials, url_to_download, file_save_as):
-    modify = connection.cursor()
+    download_successful = False
     if os.path.exists(file_save_as):
-        print '    File', file_save_as, 'already exists... will skip'
+        print 'File', file_save_as, 'already exists... will skip'
+        sys.stdout.flush()
+        download_successful = True
     else:
+        modify = connection.cursor()
         try:
             modify.execute(UPDATE_PHASE_STATUS, (DOWNLOAD_PHASE, RUNNING_STATUS, media_id))
             connection.commit()
-            if get_file(urlparse(url_to_download), file_save_as, credentials):
-                modify.execute(UPDATE_PHASE_STATUS, (CHECKSUM_PHASE, PENDING_STATUS, media_id))
-            else:
-                modify.execute(UPDATE_PHASE_STATUS, (DOWNLOAD_PHASE, FAILED_STATUS, media_id))
+            check_and_download(connection, url_to_download, file_save_as, credentials)
+            modify.execute(UPDATE_PHASE_STATUS, (CHECKSUM_PHASE, PENDING_STATUS, media_id))
             connection.commit()
-        except (RuntimeError, TypeError, NameError):
+            download_successful = True
+        except (MySQLdb.Error, OSError, IOError, urllib2.URLError,
+                paramiko.PasswordRequiredException, paramiko.SSHException) as e:
             modify.execute(UPDATE_PHASE_STATUS, (DOWNLOAD_PHASE, FAILED_STATUS, media_id))
             connection.commit()
-            print '    Failed to download:', url_to_download
-            return False
-    return True
+            log_error(connection, media_id, DOWNLOAD_PHASE, repr(e))
+    return download_successful
 
 
 # Download media files.
@@ -439,6 +610,7 @@ def download_media():
 
         if verbose and cur.rowcount > 0:
             print 'Downloading', cur.rowcount, 'media files...'
+            sys.stdout.flush()
 
         for i in range(cur.rowcount):
             record = cur.fetchone()
@@ -452,7 +624,7 @@ def download_media():
             url_to_download = record['url']
             file_extension = record['extension']
 
-            # This assumes that all of the media files for a centre are processed in groups.
+            # this assumes that all of the media files for a centre are processed in groups.
             # See the ordering in GET_FILES_TO_BE_DOWNLOADED.
             if centre != centre_id:
                 centre = centre_id
@@ -474,8 +646,13 @@ def get_image_size(image_file):
         try:
             img = Image.open(image_file)
             size = img.size
-        except (IOError, EOFError):
+        except (IOError, EOFError) as e:
             print 'Failed to open file', image_file
+            sys.stdout.flush()
+            if verbose:
+                print "get_image_size -", e
+                sys.stdout.flush()
+
     return size
 
 
@@ -509,8 +686,13 @@ def get_image_width_height(tiles_path, tile_size):
                         size = (tile_size * c + bottom_right_tile_size[0],
                                 tile_size * r + bottom_right_tile_size[1])
                         break
-        except OSError:
+        except OSError as e:
             print 'Tiles directory', original_scale_tiles_path, 'does not exist'
+            sys.stdout.flush()
+            if verbose:
+                print "get_image_width_height -", e
+                sys.stdout.flush()
+
     return size
 
 
@@ -541,6 +723,7 @@ def get_tile_storage_path(file_checksum):
 def generate_image_tiles(connection, media_id, original_media, file_checksum):
     if verbose:
         print '    Generating tiles for', original_media
+        sys.stdout.flush()
 
     cur = connection.cursor()
     cur.execute(UPDATE_PHASE_STATUS, (TILE_GENERATION_PHASE, RUNNING_STATUS, media_id))
@@ -570,6 +753,7 @@ def generate_tiles():
 
         if verbose and cur.rowcount > 0:
             print 'Generating tiles for', cur.rowcount, 'media files...'
+            sys.stdout.flush()
 
         for i in range(cur.rowcount):
             record = cur.fetchone()
@@ -597,6 +781,7 @@ def fix_interrupted_downloads():
 
         if verbose and cur.rowcount > 0:
             print 'Fixing', cur.rowcount, 'interrupted downloads...'
+            sys.stdout.flush()
 
         for i in range(cur.rowcount):
             record = cur.fetchone()
@@ -611,6 +796,7 @@ def fix_interrupted_downloads():
 
             if verbose:
                 print '    Will re-download media file', media_id
+                sys.stdout.flush()
 
             # If the download was interrupted, any existing file could be corrupted or incomplete.
             # Since the normal downloader skips existing files, we must first delete any existing
@@ -634,6 +820,7 @@ def fix_interrupted_checksum():
 
         if verbose and cur.rowcount > 0:
             print 'Fixing', cur.rowcount, 'interrupted checksum calculations...'
+            sys.stdout.flush()
 
         for i in range(cur.rowcount):
             record = cur.fetchone()
@@ -641,6 +828,7 @@ def fix_interrupted_checksum():
 
             if verbose:
                 print '    Will re-calculate checksum for media file', media_id
+                sys.stdout.flush()
 
             # Mark this for re-downloading in the next download run.
             # Since only checksum was interrupted, the download must have completed
@@ -659,6 +847,7 @@ def fix_interrupted_tiling():
 
         if verbose and cur.rowcount > 0:
             print 'Fixing', cur.rowcount, 'interrupted media tiling...'
+            sys.stdout.flush()
 
         for i in range(cur.rowcount):
             record = cur.fetchone()
@@ -667,6 +856,7 @@ def fix_interrupted_tiling():
 
             if verbose:
                 print '    Will re-generate tiles for media file', media_id, 'with checksum', file_checksum
+                sys.stdout.flush()
 
             # If the tiling was interrupted, it is highly likely that the tiles set is
             # incomplete. We therefore need to assume that the worst has happen and
@@ -687,6 +877,35 @@ def fix_interrupted_phases():
     fix_interrupted_tiling()
 
 
+def regenerate_missing_tiles():
+    connection = MySQLdb.connect(MEDIA_HOSTNAME, MEDIA_USERNAME, MEDIA_PASSWORD, MEDIA_DATABASE)
+    with connection:
+        cur = connection.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute(GET_TILING_DONE)
+
+        if verbose and cur.rowcount > 0:
+            print 'Regenerating missing tiles for', cur.rowcount, 'media files...'
+            sys.stdout.flush()
+
+        for i in range(cur.rowcount):
+            record = cur.fetchone()
+            media_id = record['id']
+            centre_id = record['cid']
+            pipeline_id = record['lid']
+            genotype_id = record['gid']
+            strain_id = record['sid']
+            procedure_id = record['pid']
+            parameter_id = record['qid']
+            file_extension = record['extension']
+            file_checksum = record['checksum']
+
+            tiles_path = get_tile_storage_path(file_checksum)
+            if not (tiles_path and os.path.exists(tiles_path) and os.path.isfile(tiles_path + 'thumbnail.jpg')):
+                original_media = get_original_media_path(centre_id, pipeline_id, genotype_id, strain_id,
+                                                         procedure_id, parameter_id, media_id, file_extension)
+                generate_image_tiles(connection, media_id, original_media, file_checksum)
+
+
 def print_usage():
     print '\nPhenoDCC media downloader and tile generator\n(http://www.mousephenotype.org)'
     print 'Version', VERSION, '\n'
@@ -695,6 +914,7 @@ def print_usage():
     print '    -d, --download   Download media files that was marked for download.'
     print '    -t, --tile       Generate tiles for all of the image media files'
     print '                     that was downloaded successfully.'
+    print '    -r, --regen      Identify missing tiles and re-generate them from original media files.'
     print '    -v, --verbose    Verbose output of execution status.'
     print '    -h, --help       Displays this help information.\n'
     print 'The configuration file for running this script is set in \'phenodcc_media.config\'.'
@@ -709,12 +929,13 @@ def print_usage():
     print 'Hence, a file name prepare.lock, download.lock or tiling.lock is created in the'
     print 'directory from which the script is invoked. Note that this only works if the script'
     print 'is always run from the same directory. Two different phases can run simultaneously.'
+    sys.stdout.flush()
 
 
 def parse_commandline():
     global verbose
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hdptv", ["help", "download", "prepare", "tile", "verbose"])
+        opts, args = getopt.getopt(sys.argv[1:], "hdprtv", ["help", "download", "prepare", "regen", "tile", "verbose"])
     except getopt.GetoptError as error:
         print error
         print_usage()
@@ -732,6 +953,8 @@ def parse_commandline():
             what_to_do = "download"
         elif option in ("-t", "--tile"):
             what_to_do = "tile"
+        elif option in ("-r", "--regen"):
+            what_to_do = "regen"
         elif option in ("-v", "--verbose"):
             verbose = True
         elif option in ("-h", "--help"):
@@ -749,10 +972,19 @@ def main():
             fp = open('prepare.lock', 'w')
             try:
                 fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                start_time = datetime.now()
+                print 'Started preparing for download at:', start_time
                 add_files_to_download()
                 fp.close()
-            except IOError:
+                end_time = datetime.now()
+                print 'Preparation for download ended at:', end_time
+                print 'Elapsed time:', end_time - start_time
+            except IOError as e:
                 print 'Already preparing media files for download... check prepare.lock'
+                sys.stdout.flush()
+                if verbose:
+                    print "main -", e
+                    sys.stdout.flush()
                 sys.exit()
         elif what_to_do == 'download':
             fp = open('download.lock', 'w')
@@ -762,20 +994,57 @@ def main():
                 # The add files process above only inserts new media files to be downloaded;
                 # hence, we should not fix there. Since checksum and tiling follows download,
                 # the fix will cascade automatically.
+                start_time = datetime.now()
+                print 'Started fixing interrupted downloads at:', start_time
                 fix_interrupted_phases()
+                end_time = datetime.now()
+                print 'Finished fixing interrupted downloads at:', end_time
+                print 'Elapsed time:', end_time - start_time
+
+                start_time = datetime.now()
+                print 'Started downloading media files at:', start_time
                 download_media()
                 fp.close()
-            except IOError:
+                end_time = datetime.now()
+                print 'Finished downloading media files at:', end_time
+                print 'Elapsed time:', end_time - start_time
+            except IOError as e:
                 print 'Already downloading media files... check download.lock'
+                sys.stdout.flush()
+                if verbose:
+                    print "main -", e
+                    sys.stdout.flush()
                 sys.exit()
         elif what_to_do == 'tile':
             fp = open('tiling.lock', 'w')
             try:
                 fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                start_time = datetime.now()
+                print 'Started tiling images at:', start_time
                 generate_tiles()
                 fp.close()
-            except IOError:
+                end_time = datetime.now()
+                print 'Finished tiling images at:', end_time
+                print 'Elapsed time:', end_time - start_time
+            except IOError as e:
                 print 'Already tiling image files... check tiling.lock'
+                sys.stdout.flush()
+                if verbose:
+                    print "main -", e
+                    sys.stdout.flush()
+                sys.exit()
+        elif what_to_do == 'regen':
+            fp = open('tiling.lock', 'w')
+            try:
+                fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                regenerate_missing_tiles()
+                fp.close()
+            except IOError as e:
+                print 'Already tiling image files... check tiling.lock'
+                sys.stdout.flush()
+                if verbose:
+                    print "main -", e
+                    sys.stdout.flush()
                 sys.exit()
     else:
         print_usage()

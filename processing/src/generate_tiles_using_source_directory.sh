@@ -74,14 +74,14 @@ function generate_tiles() {
 # tile is smaller or equal to 64x64.
 function scale_and_generate_tiles() {
     tiles_dir=$1$2/$3;
-    if [ ! -d "tiles_dir" ]
+    if [[ ! -d "${tiles_dir}" ]]
     then
         #echo "    Directory $tiles_dir for $2x$2 tiles at $3% scale does not exists...";
         mkdir -p ${tiles_dir};
     fi;
     
     # Uses ImageMagick to scale the image
-    if [ ! -z "$3" ]
+    if [[ ! -z "$3" ]]
     then
         (cd ${tiles_dir}; convert ../../original.${extension} -resize $3% scaled.${extension}; )
     fi;
@@ -98,7 +98,7 @@ function scale_and_generate_tiles() {
 function generate_tiles_set() {
     checksum_dir=$1;
 
-    if [ "$extension" = "dcm" ]
+    if [[ "${extension}" = "dcm" ]]
     then
         #echo "    Converting DICOM to preferred image format...";
         (cd ${checksum_dir}; convert -define dcm:display-range=reset original.${extension} -normalize original.${pref_format}; )
@@ -108,7 +108,10 @@ function generate_tiles_set() {
     fi;
 
     # Delete original media file since it is archived in the source directory.
-    (cd ${checksum_dir}; rm -f original.${extension}; )
+    if [[ "${extension}" != "${pref_format}" ]]
+    then
+        (cd ${checksum_dir}; rm -f original.${extension}; )
+    fi;
 
     # we convert all images to preferred image format before processing
     extension="$pref_format";
@@ -118,12 +121,15 @@ function generate_tiles_set() {
     #
     # NOTE: we are assuming TIF files may contain the same image at
     # different zooms; but not different images.
-    if [ `find ${checksum_dir} -iname "*.${pref_format}" -type f | wc -l` -gt 1 ]
+    if [[ `find ${checksum_dir} -maxdepth 1 -iname "*.${pref_format}" -type f | wc -l` -gt 1 ]]
     then
-        largest_file=`find ${checksum_dir} -iname "*.${pref_format}" -type f -print0 | xargs -0 du -b | sort -nr | head -n 1 | cut -f 2`;
-        mv ${largest_file} ${checksum_dir}original.${pref_format};
-        
-        # Delete all of the other extracted images
+        largest_file=`find ${checksum_dir} -maxdepth 1 -iname "*.${pref_format}" -type f -print0 | xargs -0 du -b | sort -nr | head -n 1 | cut -f 2`;
+        if [[ "${largest_file}" != "${checksum_dir}original.${pref_format}" ]]
+        then
+            mv -f ${largest_file} ${checksum_dir}original.${pref_format};
+        fi;
+
+        # Delete all of the files except for the original JPEG image to tile
         find ${checksum_dir} ! -iname "original.${pref_format}" -type f -delete;
     fi;
 
@@ -153,7 +159,7 @@ echo "The International Mouse Phenotyping Consortium";
 echo "http://www.mousephenotype.org/";
 echo "----------------------------------------------------------------";
 
-if [ ! $# -eq 4 ]
+if [[ ! $# -eq 4 ]]
 then
     echo "Usage:";
     echo "    generate_tiles <source> <destination> <sizes> <scales>";
@@ -171,7 +177,7 @@ echo "     Source: ${dir_src}";
 echo "Destination: ${dir_dest}";
 echo "-----------------------------------------------------------";
 
-if [ ! -d ${dir_src} ]
+if [[ ! -d ${dir_src} ]]
 then
     echo "ERROR: Supplied image source directory does not exists...";
     echo "Will abort image tile generation...";
@@ -186,7 +192,7 @@ case ${dir_dest} in
         ;;
 esac
 
-if [ ! -d ${dir_dest} ]
+if [[ ! -d ${dir_dest} ]]
 then
     echo "Supplied target directory does not exists...";
     echo "    Creating directory...";
@@ -228,13 +234,13 @@ do
     checksum_dir=${dir_dest}${checksum_hierarchy};
     checksum_filepath=${checksum_dir}original.${extension};
 
-    if [ ! -d "${checksum_dir}" ]
+    if [[ ! -d "${checksum_dir}" ]]
     then
         #echo "    Directory ${checksum_dir} does not exists...";
         mkdir -p ${checksum_dir};
     fi;
 
-    if [ -e "${checksum_filepath}" ]
+    if [[ -e "${checksum_filepath}" ]]
     then
         echo "    File ${checksum_filepath} already exists... skipping";
     else

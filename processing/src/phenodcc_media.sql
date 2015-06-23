@@ -106,4 +106,52 @@ create table media_file (
 ) engine = innodb;
 
 
+/* For every phase (e.g., download and processing), we wish to record reasons for failure. This is captured here by capturing the runtime Python exceptions. */
+drop table if exists error_logs;
+create table error_logs (
+       id bigint unsigned not null auto_increment,
+       media_id bigint unsigned not null, /* primary key of media file */
+       phase_id smallint unsigned not null, /* at which phase did the error occur */
+       error_msg varchar(256), /* Python error message extracted from the exception (column name corresponds to Python)*/
+       created datetime not null, /* when was this error recorded */
+       last_update timestamp not null default current_timestamp on update current_timestamp,
+       primary key (id),
+       foreign key (media_id) references media_file(id) on update cascade on delete restrict,
+       foreign key (phase_id) references phase(id) on update cascade on delete restrict
+) engine = innodb;
+
+/* A media file could be associated with other measurements. These are supplied by the centres as parameter associations. In the following table, we store all of the parameters which a media is associated with. A media file may be associated with more than one parameter. All associations are implicitly restricted to parameters with measurements with the same context, i.e., centre, pipeline, genotype, strain.
+
+The following table is design with two usage scenarios in mind:
+
+1) Given a measurement context, show the media related to this context.
+2) Given a media context, show all of the parameters with which it is associated.
+3) Given a specific media, show parameter it is associated with. This is used for displaying media labels. 
+
+This table is filled in after the media_file has been updated during context building, especially during media downloader prepare phase. See parameter_association.md for further details. */
+drop table if exists association;
+create table association (
+       id bigint unsigned not null auto_increment,
+       cid int unsigned not null, /* centre id */
+       lid int unsigned not null, /* pipeline id */
+       gid int unsigned not null, /* genotype id */
+       sid int unsigned not null, /* strain id */
+       pid int unsigned not null, /* procedure id */
+       mid bigint unsigned not null,  /* measurement id associated with media file */
+       media_qid int unsigned not null,  /* id for media parameter */
+       assoc_qid int unsigned not null,  /* id for associated parameter */
+
+       /* following are useful for display */
+       assoc_qeid varchar(32) not null,  /* key for associated parameter */
+       assoc_name varchar(512) not null,  /* name for associated parameter */
+       last_update timestamp not null default current_timestamp on update current_timestamp,
+       primary key (id),
+       unique parameter_assoc_idx (cid, lid, gid, sid, pid, mid, media_qid, assoc_qid),
+       index gene_context_idx (cid, lid, gid, sid),
+       index measurement_idx (mid),
+       index procedure_idx (pid),
+       index media_qid_idx (media_qid),
+       index assoc_qid_idx (assoc_qid)
+) engine = innodb;
+
 /* End of MySQL script */
