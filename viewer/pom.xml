@@ -10,7 +10,7 @@
     phenoview or the QC tool. These are specified in index.jsp of these
     projects. Also, don't forget to release the web apps along with the
     image viewer. -->
-    <version>0.7</version>
+    <version>0.7.2</version>
     <packaging>war</packaging>
     <name>phenodcc-imaging-display</name>
     <url>http://www.mousephenotype.org</url>
@@ -57,7 +57,7 @@
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
-            <version>3.2.1</version>
+            <version>3.2.2</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.persistence</groupId>

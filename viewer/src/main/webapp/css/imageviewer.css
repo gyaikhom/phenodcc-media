@@ -253,6 +253,7 @@ div {
 
 .thumbnail a {
     float: left;
+    color: #0af;
 }
 
 .animal-media {
@@ -419,11 +420,11 @@ div {
 }
 .image-panel-left {
     float: left;
-    background: blue;
+    background: #000;
 }
 .image-panel-right {
     float: right;
-    background: red;
+    background: #000;
 }
 
 .image-panel-top,
@@ -658,7 +659,7 @@ iframe {
     height: 20px;
     float: left;
     display: block;
-    background: #ccc;
+    background: #aaa;
     color: #3f3f3f;
 }
 
@@ -752,7 +753,7 @@ background-image: url('../images/first_page_on.png');
 .disabled-pager-button.list-next-page,
 .disabled-pager-button.list-last-page {
     color: #fff;
-    background-color: #ccc;
+    /* background-color: #ccc; */
     cursor: default;
 }
 
@@ -796,4 +797,43 @@ background-image: url('../images/first_page_on.png');
     background: #333;
     color: #999;
     cursor: default;
+}
+
+.embryo-view {
+    float: left;
+}
+
+.embryo-view .title {
+    background: #333;
+    color: #ccc;
+    text-align: center;
+    font-variant: small-caps;
+    font-size: 19px;
+    letter-spacing: 2px;
+}
+
+.embryo-view .no-image {
+    color: #f60;
+    padding: 30px;
+    border: 1px solid #333;
+}
+
+.embryo-view img {
+    border: 2px solid;
+}
+
+.embryo-view img.axial {
+    border-color: #000088;
+}
+.embryo-view img.sagittal {
+    border-color: #880000;
+}
+.embryo-view img.coronal {
+    border-color: #008800;
+}
+
+.embryo-unprocessed {
+    color: #aaa;
+    padding: 50px;
+    text-align: center;
 }

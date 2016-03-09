@@ -24,6 +24,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import org.mousephenotype.dcc.embryo.entities.Preprocessed;
 import org.mousephenotype.dcc.entities.overviews.MetadataGroupToValues;
 import org.mousephenotype.dcc.entities.overviews.ProcedureMetadataGroup;
 import org.mousephenotype.dcc.media.entities.MediaFileDetail;
@@ -36,6 +37,10 @@ import org.mousephenotype.dcc.media.entities.MediaFileDetail;
 @Stateless
 @Path("mediafiles")
 public class MediaFilesFacadeREST extends AbstractFacade<MediaFileDetail> {
+
+    // random: large enough not to coincide
+    private final Short EMBRYO_PROCESSING_PHASE = 99;
+    private final Short EMBRYO_FAIL = 0;
 
     public MediaFilesFacadeREST() {
         super(MediaFileDetail.class);
@@ -175,6 +180,39 @@ public class MediaFilesFacadeREST extends AbstractFacade<MediaFileDetail> {
         return t;
     }
 
+    private Short getEmbryoStatus(EntityManager em, String mediaFileId) {
+        Short status = EMBRYO_FAIL;
+        try {
+            TypedQuery<Preprocessed> q
+                    = em.createNamedQuery("Preprocessed.findByImageName",
+                            Preprocessed.class);
+            q.setParameter("imageName", mediaFileId);
+            q.setMaxResults(1);
+            Preprocessed t = q.getSingleResult();
+            status = (short) t.getStatusId();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+        return status;
+    }
+
+    private void setEmbryoProcessingStatus(List<MediaFileDetail> mediaFiles) {
+        Iterator<MediaFileDetail> i = mediaFiles.iterator();
+        MediaFileDetail d;
+        EntityManager em = getEntityManager();
+        try {
+            while (i.hasNext()) {
+                d = i.next();
+                d.setPhase(EMBRYO_PROCESSING_PHASE);
+                d.setStatus(getEmbryoStatus(em, d.getId().toString()));
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public MediaFileDetailsPack extjsFindBy(
@@ -208,6 +246,19 @@ public class MediaFilesFacadeREST extends AbstractFacade<MediaFileDetail> {
                 }
                 List<MetadataGroupToValues> mgs = convertMetadataGroupsToIndices(temp);
                 p.setMetadataGroups(mgs);
+
+                String[] embryoParameters = {
+                    "IMPC_EOL_001_001", "IMPC_EMO_001_001", "IMPC_EMA_001_001"};
+                boolean isEmbryo = false;
+                for (String key : embryoParameters) {
+                    if (key.equals(parameterKey)) {
+                        isEmbryo = true;
+                        break;
+                    }
+                }
+                if (isEmbryo) {
+                    setEmbryoProcessingStatus(temp);
+                }
                 p.setDataSet(temp);
             }
         }

@@ -38,8 +38,8 @@ public class MediaFileDetail implements Serializable {
     private String extension;
     private Integer width;
     private Integer height;
-    private final Short phase;
-    private final Short status;
+    private Short phase;
+    private Short status;
     private String metadataGroup;
     private Long metadataGroupIndex;
     private Integer pipelineId;
@@ -190,9 +190,17 @@ public class MediaFileDetail implements Serializable {
         return phase;
     }
 
+    public void setPhase(Short phase) {
+        this.phase = phase;
+    }
+
     @XmlElement(name = "s")
     public Short getStatus() {
         return status;
+    }
+
+    public void setStatus(Short status) {
+        this.status = status;
     }
 
     @XmlTransient

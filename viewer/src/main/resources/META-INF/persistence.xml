@@ -29,13 +29,13 @@
     <class>org.mousephenotype.dcc.media.entities.Seriesmediaparameter</class>
     <class>org.mousephenotype.dcc.media.entities.Seriesmediaparametervalue</class>
     <class>org.mousephenotype.dcc.media.entities.AProcedure</class>
-
     <!-- project entities -->
     <class>org.mousephenotype.dcc.media.entities.MediaFile</class>
     <class>org.mousephenotype.dcc.media.entities.Phase</class>
     <class>org.mousephenotype.dcc.media.entities.AStatus</class>
     <class>org.mousephenotype.dcc.media.entities.FileExtension</class>
     <class>org.mousephenotype.dcc.media.entities.Association</class>
+    <class>org.mousephenotype.dcc.embryo.entities.Preprocessed</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="${db.url}"/>
       <property name="javax.persistence.jdbc.driver" value="${db.driver}"/>
