@@ -12,24 +12,41 @@ To run the script, you must use one of the command-line switches, as shown below
 
     PhenoDCC media downloader and tile generator
     (http://www.mousephenotype.org)
-    Version 1.0.0 
-    
-    USAGE: phenodcc_media.py [-p | --prepare | -d | --download | -t | --tile | -v | --verbose | -h | --help]
-    
-        -p, --prepare    Prepare media files by marking them for download.
-        -d, --download   Download media files that was marked for download.
-        -t, --tile       Generate tiles for all of the image media files
-                         that was downloaded successfully.
-        -v, --verbose    Verbose output of execution status.
-        -h, --help       Displays this help information.
-    
+    Version 0.8.9 
+
+    USAGE:
+	    phenodcc_media.py [-p | --prepare | -d | --download | -t | --tile |
+		     -c | --centre | -x | --config-file | -l | --lock-dir |
+             -silent | --silent | -h | --help]
+
+        -p, --prepare      Prepare media files by marking them for download.
+        -d, --download     Download media files that was marked for download.
+        -t, --tile         Generate tiles for all of the image media files
+                           that was downloaded successfully.
+        -r, --regen        Identify missing tiles and re-generate them from original image.
+        -c, --centre       Restrict download to given centre.
+        -l, --lock-dir     Directory where single instance locks are held.
+        -x, --config-file  Which file to use for getting configuration.
+        -s, --silent       By default, the application will produce verbose output
+                           of the execution status. Silent will disable this.
+                           Error messages will continue to be produced in silent mode.
+        -h, --help         Displays this help information.
+
     The configuration file for running this script is set in 'phenodcc_media.config'.
     The following settings are allowed:
-    
+
         tracker - Database for getting active contexts and media file URLs.
           media - Database where we track the download and processing of media files.
            tile - Set tile size.
          scales - Set zooming scales.
+
+Single Instance
+---------------
+To allow the script to be invoked periodically as part of an automated system,
+the script uses file locking to allow only one running instance of a phase.
+Hence, a file name prepare.lock, download.lock or tiling.lock is created in the
+directory from which the script is invoked. Note that this only works if the script
+is always run from the same directory. Two different phases can run simultaneously.
 
 ## Step-by-step instructions
 
