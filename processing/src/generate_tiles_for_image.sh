@@ -185,7 +185,7 @@ fi;
 
 if [[ ! -f ${file_to_process} ]]
 then
-    echo "Abort tiling... ${file_to_process} does not exists...";
+    echo "Abort tiling... \"${file_to_process}\" does not exists...";
     exit 1;
 fi;
 
@@ -228,11 +228,11 @@ checksum_filepath=${checksum_dir}original.${extension};
 
 if [[ -d "${checksum_dir}" ]]
 then
-    echo "    ${checksum_dir} exists... will delete and redo tiling";
+    echo "Tiles directory \"${checksum_dir}\" exists... will delete and redo tiling";
     rm -Rf ${checksum_dir};
 fi;
 
-echo "Processing ${file_to_process}...";
+echo "Processing \"${file_to_process}\"...";
 mkdir -p ${checksum_dir};
 cp -f ${file_to_process} ${checksum_filepath};
 generate_tiles_set ${checksum_dir} ${tile_sizes} ${image_scales};
